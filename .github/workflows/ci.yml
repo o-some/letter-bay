@@ -25,18 +25,23 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Pin npm 11 for deterministic dependency resolution
+        run: |
+          npm install --global npm@11.19.0
+          npm --version
+
       - id: lock
         name: Ensure dependency lockfile exists
         continue-on-error: true
         run: |
           if [ ! -f package-lock.json ]; then
-            npm install --package-lock-only
+            npm install --package-lock-only --ignore-scripts --no-audit --no-fund
           fi
 
       - id: install
         name: Install reproducibly
         continue-on-error: true
-        run: npm ci
+        run: npm ci --no-audit --no-fund
 
       - id: lint
         name: Lint
