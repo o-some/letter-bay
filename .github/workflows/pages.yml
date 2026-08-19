@@ -3,12 +3,6 @@ name: Deploy Letter Bay to GitHub Pages
 on:
   push:
     branches: [main]
-    paths:
-      - 'index.html'
-      - 'source.html'
-      - 'assets/**'
-      - 'boss-sprite-dropbox-v2.webp'
-      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -28,8 +22,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Upload site artifact
+        uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
       - name: Deploy to GitHub Pages
