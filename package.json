@@ -1,0 +1,27 @@
+{
+  "name": "letter-bay",
+  "version": "2.0.0-alpha.1",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.12.0" },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "lint": "node scripts/lint.mjs",
+    "typecheck": "astro check",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:baseline": "node tests/baseline/legacy-contract.mjs",
+    "test:assets": "node scripts/asset-integrity.mjs",
+    "test:e2e": "playwright test",
+    "check": "npm run lint && npm run typecheck && npm run test:unit && npm run test:baseline && npm run build && npm run test:assets"
+  },
+  "dependencies": { "astro": "7.2.2" },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@playwright/test": "1.62.1",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  }
+}
