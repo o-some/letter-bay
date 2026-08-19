@@ -4,6 +4,24 @@ Alle wesentlichen Änderungen an Letter Bay werden hier dokumentiert.
 
 ## [Unreleased] – Letter Bay V2
 
+### Phase 3 – Animationsfundament
+
+- zentralen `AnimationController` mit Promise-basiertem Abschluss über `animation.finished` eingeführt.
+- Sicherheits-Timeout pro Animation ergänzt, damit hängende Browseranimationen das Spiel niemals blockieren können.
+- kontrollierten Abbruch über `AbortSignal` ergänzt.
+- Fehlerpfade für fehlende Animation Targets und WAAPI-Fehler gekapselt.
+- `prefers-reduced-motion` mit kurzem Low-Motion-Preset umgesetzt.
+- semantische Animationen für richtige/falsche Taste, Buchstabenflug, Tula-Angriff, Boss-Treffer, Boss-Angriff, Tula-Treffer, Wortlösung, Bossintro, Boss-Sieg und Jubel definiert.
+- `battleAnimations.ts` für richtige/falsche Buchstaben, Wortlösung, Bossintro und Boss-Sieg ergänzt.
+- `animationEffects.ts` als reine Brücke zwischen typisierten Game Effects und Animationen ergänzt; Animationen dispatchen keine eigenen Game Events.
+- performanceorientierte Motion-Stile mit Transform/Opacity/Filter und Reduced-Motion-Regeln ergänzt.
+- Unit Tests für `finished`, Timeout, Abort, Reduced Motion, fehlende Targets und WAAPI-Fehler ergänzt.
+- Integrationstest für Effect-zu-Animations-Mapping ergänzt.
+- bestehende State-Machine-, Legacy-, Bossbild-, Boss-1->Boss-2-, WebKit/iPhone- und Chromium-Regressionssuite weiterhin vollständig grün gehalten.
+- finaler isolierter Phase-3-Validierungslauf `32309129223` vollständig grün.
+- `enhancedAnimations` bleibt standardmäßig deaktiviert; keine Legacy-Spieloberfläche wurde verändert.
+- `main` und Rollback-Branch unverändert gelassen.
+
 ### Phase 2 – State Machine
 
 - typisierten zentralen `GameState` mit den verbindlichen V2-Spielphasen eingeführt.
