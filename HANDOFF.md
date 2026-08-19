@@ -14,9 +14,11 @@ Sprachlern-Minispiel für Tula’s Island. Wörter werden gegen eine Piratenflot
 - Phase 0 – Baseline: **PASS**
 - Phase 1 – Testnetz und Kompatibilität: **PASS**
 - Phase 2 – State Machine: **PASS**
-- Nächste Phase: **Phase 3 – Animationsfundament**
+- Phase 3 – Animationsfundament: **PASS**
+- Nächste Phase: **Phase 4 – Lernkarte und Meisteraufgaben**
 - Phase-1-Validierung: GitHub Actions `32307481759` = `success`
 - Phase-2-Validierung: GitHub Actions `32308257027` = `success`
+- Phase-3-Validierung: GitHub Actions `32309129223` = `success`
 - `main` darf während der V2-Entwicklung nicht direkt beschrieben werden.
 - Kein Merge ohne ausdrückliche Freigabe.
 
@@ -57,29 +59,34 @@ Neue V2-Funktionen bleiben per Feature Flags standardmäßig deaktiviert, bis ih
 
 ## Phase-2-State-Machine
 
-Neue Kernmodule:
+Kernmodule:
 
 - `src/game/gameState.ts`
 - `src/game/gameEvents.ts`
 - `src/game/gameMachine.ts`
 
-Die State Machine ist aktuell noch nicht als aktive Gameplay-Runtime eingeschaltet. `v2StateMachine` bleibt `false`. Dadurch bleibt die Legacy-Oberfläche unverändert, während das neue Zustandsmodell separat getestet wird.
+Die State Machine ist noch nicht als aktive Gameplay-Runtime eingeschaltet. `v2StateMachine` bleibt `false`. Eingaben werden außerhalb erlaubter Lernzustände abgewiesen. Der Reducer enthält keine Timer.
 
-Abgedeckt sind unter anderem:
+## Phase-3-Animationsfundament
 
-- `BOOTING`
-- `LOADING_ASSETS`
-- `BOSS_INTRO`
-- `WORD_DISCOVERY`
-- `PLAYER_INPUT`
-- `WORD_SOLVED`
-- `BOSS_HIT`
-- `BOSS_DEFEATED`
-- `LOSS`
-- `PAUSED`
-- `ERROR_RECOVERY`
+Kernmodule:
 
-Eingaben werden außerhalb erlaubter Lernzustände abgewiesen. Der Reducer enthält keine Timer.
+- `src/game/animationController.ts`
+- `src/game/battleAnimations.ts`
+- `src/game/animationEffects.ts`
+- `src/styles/animations.css`
+
+Eigenschaften:
+
+- Promise-basiertes Warten auf `animation.finished`,
+- Sicherheits-Timeout gegen blockierte Animationen,
+- `AbortSignal` für kontrollierte Abbrüche,
+- Fehler und fehlende Targets führen zu sicheren Ergebnissen statt Absturz,
+- `prefers-reduced-motion` nutzt einen kurzen Low-Motion-Pfad,
+- Animationen verändern den Game State nicht eigenständig,
+- semantische Sequenzen für richtigen/falschen Buchstaben, Wortlösung, Bossintro und Boss-Sieg.
+
+`enhancedAnimations` bleibt weiterhin `false`. Die Legacy-Oberfläche bleibt unverändert, bis der echte V2-Pfad kontrolliert aktiviert wird.
 
 ## Teststatus
 
@@ -89,7 +96,9 @@ Alle verpflichtenden Gates sind grün:
 - Lint
 - Astro/TypeScript Typecheck
 - Unit Tests
+- AnimationController: finished / timeout / abort / reduced motion / Fehlerpfade
 - Integration / State-Machine-Parität
+- Animation-Effect-Mapping
 - Legacy Contract
 - Astro Build
 - Boss-/Asset Integrity
@@ -103,8 +112,10 @@ Details:
 
 - `docs/PHASE_1_IMPLEMENTATION.md`
 - `docs/PHASE_2_STATE_MACHINE.md`
+- `docs/PHASE_3_ANIMATIONS.md`
 - `docs/ci/phase1-status.md`
 - `docs/ci/phase2-status.md`
+- `docs/ci/phase3-status.md`
 
 ## Kritische Regressionstests
 1. Boss 1 starten.
@@ -115,21 +126,20 @@ Details:
 6. Bossgrafik muss in Intro, Arena und Route sichtbar sein.
 7. Kein wachsender Leerraum / unkontrolliertes Scrollen nach neuen Wörtern.
 
-## Phase 3 – verbindlicher nächster Schritt
+## Phase 4 – verbindlicher nächster Schritt
 
-Phase 3 baut ein kontrolliertes Animationssystem. Keine Animation darf Spielzustände eigenständig oder über unkoordinierte Timer verändern.
+Phase 4 implementiert die Lernkarte und erste Meisteraufgaben getrennt von Kampfanimation und UI.
 
 Pflicht:
 
-- zentraler `AnimationController`,
-- Promise-basierter Abschluss,
-- Sicherheits-Timeout je Animation,
-- `prefers-reduced-motion`,
-- richtige Buchstaben: Taste -> Wort -> Tula -> Boss,
-- falsche Buchstaben: sanfter Bossangriff -> Tula-Reaktion,
-- Wort gelöst: klarer Lern-/Treffer-Moment,
-- Bossintro und Boss-Sieg nicht blockierend,
-- bestehende Legacy-Runtime weiter unangetastet.
+- typisiertes `WordEntry`-Datenmodell,
+- Bedeutung / Übersetzung / Hinweis / Beispielsatz als strukturierte Lerndaten,
+- Aussprache-Schnittstelle ohne Autoplay-Zwang,
+- kurze Mastery Challenges,
+- mindestens Bild-/Übersetzungs-/Artikel-/Satz-geeignete Aufgabentypen vorbereiten,
+- Lernstatus getrennt vom reinen Bossfortschritt speichern,
+- keine stille Änderung an drei Wörtern pro Boss,
+- keine Aktivierung im Legacy-Pfad.
 
 ## Regeln für Codex/ChatGPT
 - Ausschließlich dieses Repo bearbeiten.
