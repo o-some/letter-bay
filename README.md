@@ -32,6 +32,10 @@ Rollback-Branch im Quellrepo: `pre-extraction-letter-bay-20260819`
 
 Die alte Kopie in `tulasisland` darf erst entfernt werden, wenn alle Tests im neuen Repo bestanden sind.
 
+## Deployment-Hinweis
+
+Pages wird direkt über GitHub Actions aus `main` veröffentlicht. Ein manueller Commit nach Bot-Importen stößt das Pages-Deployment an, weil Bot-Pushes mit `GITHUB_TOKEN` keine weiteren Workflows auslösen.
+
 ## Codex
 
 Vor Änderungen immer zuerst `README.md` und `HANDOFF.md` lesen. Keine anderen Spiele-Repositories verändern.
