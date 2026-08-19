@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
 function legacyClueMap(): Map<string, string> {
@@ -10,13 +10,27 @@ function legacyClueMap(): Map<string, string> {
   return new Map(words.map(([word, , clue]) => [clue, word]));
 }
 
+async function expectLoadedImage(locator: Locator) {
+  await expect(locator).toHaveCount(1);
+  await expect.poll(
+    () => locator.evaluate((image) =>
+      image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
+    ),
+    { timeout: 10_000, intervals: [100, 250, 500] },
+  ).toBe(true);
+}
+
 async function expectBossImages(page: Page) {
   await expect(page.locator('#introArt .letter-bay-boss-image')).toHaveCount(1);
   await expect(page.locator('#route .letter-bay-boss-image')).toHaveCount(10);
-  const loaded = await page.locator('.letter-bay-boss-image').evaluateAll((images) =>
-    images.every((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0),
-  );
-  expect(loaded).toBe(true);
+  await expect.poll(
+    () => page.locator('.letter-bay-boss-image').evaluateAll((images) =>
+      images.length >= 11 && images.every((image) =>
+        image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
+      ),
+    ),
+    { timeout: 10_000, intervals: [100, 250, 500] },
+  ).toBe(true);
 }
 
 test('legacy is the safe default and all boss assets render', async ({ page }) => {
@@ -54,17 +68,13 @@ test('Boss 1 transitions to Boss 2 and remains playable', async ({ page }) => {
 
   await expect(page.locator('#intro')).toHaveClass(/show/, { timeout: 6_000 });
   await expect(page.locator('#introName')).toHaveText('Kapitän Brax');
-  expect(await page.locator('#introArt .letter-bay-boss-image').evaluate((image) =>
-    image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
-  )).toBe(true);
+  await expectLoadedImage(page.locator('#introArt .letter-bay-boss-image'));
 
   await page.locator('#start').click();
   await expect(page.locator('#intro')).not.toHaveClass(/show/);
   await expect(page.locator('#bossLevel')).toContainText('LEVEL 2');
   await expect(page.locator('#keyboard .key')).toHaveCount(29);
-  expect(await page.locator('#bossArt .letter-bay-boss-image').evaluate((image) =>
-    image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
-  )).toBe(true);
+  await expectLoadedImage(page.locator('#bossArt .letter-bay-boss-image'));
 
   const scrollState = await page.evaluate(() => ({
     y: window.scrollY,
