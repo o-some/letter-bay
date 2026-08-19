@@ -1,0 +1,36 @@
+[data-lb-motion-target] {
+  transform-origin: center;
+  will-change: transform, opacity, filter;
+  backface-visibility: hidden;
+}
+
+[data-lb-motion-target="boss"],
+[data-lb-motion-target="tula"] {
+  transform-origin: center bottom;
+}
+
+.lb-letter-ghost {
+  position: fixed;
+  z-index: 90;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 12px;
+  color: var(--lb-cream);
+  background: color-mix(in srgb, var(--lb-turquoise) 35%, var(--lb-navy));
+  box-shadow: 0 8px 24px rgb(0 0 0 / 28%);
+  font-weight: 950;
+}
+
+.lb-animation-feedback {
+  contain: layout paint;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-lb-motion-target],
+  .lb-letter-ghost {
+    will-change: opacity;
+  }
+}
