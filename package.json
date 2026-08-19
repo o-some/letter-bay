@@ -12,10 +12,11 @@
     "typecheck": "astro check",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
     "test:baseline": "node tests/baseline/legacy-contract.mjs",
     "test:assets": "node scripts/asset-integrity.mjs",
     "test:e2e": "playwright test",
-    "check": "npm run lint && npm run typecheck && npm run test:unit && npm run test:baseline && npm run build && npm run test:assets"
+    "check": "npm run lint && npm run typecheck && npm run test:unit && npm run test:integration && npm run test:baseline && npm run build && npm run test:assets"
   },
   "dependencies": { "astro": "7.2.2" },
   "devDependencies": {
