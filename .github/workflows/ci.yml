@@ -58,6 +58,11 @@ jobs:
         continue-on-error: true
         run: npm run test:unit
 
+      - id: integration
+        name: Integration tests
+        continue-on-error: true
+        run: npm run test:integration
+
       - id: baseline
         name: Legacy contract
         continue-on-error: true
@@ -83,7 +88,7 @@ jobs:
         continue-on-error: true
         run: npm run test:e2e
 
-      - name: Write inspectable Phase 1 CI status
+      - name: Write inspectable Phase 2 CI status
         if: always() && github.event_name == 'push' && github.ref == 'refs/heads/feature/letter-bay-v2'
         env:
           LOCK: ${{ steps.lock.outcome }}
@@ -91,6 +96,7 @@ jobs:
           LINT: ${{ steps.lint.outcome }}
           TYPECHECK: ${{ steps.typecheck.outcome }}
           UNIT: ${{ steps.unit.outcome }}
+          INTEGRATION: ${{ steps.integration.outcome }}
           BASELINE: ${{ steps.baseline.outcome }}
           BUILD: ${{ steps.build.outcome }}
           ASSETS: ${{ steps.assets.outcome }}
@@ -98,8 +104,8 @@ jobs:
           E2E: ${{ steps.e2e.outcome }}
         run: |
           mkdir -p docs/ci
-          cat > docs/ci/phase1-status.md <<EOF
-          # Letter Bay V2 – Phase 1 CI Status
+          cat > docs/ci/phase2-status.md <<EOF
+          # Letter Bay V2 – Phase 2 CI Status
 
           Commit tested: \`${GITHUB_SHA}\`
 
@@ -110,6 +116,7 @@ jobs:
           | lint | ${LINT} |
           | typecheck | ${TYPECHECK} |
           | unit | ${UNIT} |
+          | integration / state-machine parity | ${INTEGRATION} |
           | legacy contract | ${BASELINE} |
           | build | ${BUILD} |
           | asset integrity | ${ASSETS} |
@@ -121,14 +128,14 @@ jobs:
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add docs/ci/phase1-status.md
+          git add docs/ci/phase2-status.md
           if [ -f package-lock.json ]; then git add package-lock.json; fi
           if ! git diff --cached --quiet; then
-            git commit -m 'test: record Letter Bay Phase 1 CI result'
+            git commit -m 'test: record Letter Bay Phase 2 CI result'
             git push
           fi
 
-      - name: Enforce Phase 1 gate
+      - name: Enforce Phase 2 gate
         if: always()
         env:
           LOCK: ${{ steps.lock.outcome }}
@@ -136,6 +143,7 @@ jobs:
           LINT: ${{ steps.lint.outcome }}
           TYPECHECK: ${{ steps.typecheck.outcome }}
           UNIT: ${{ steps.unit.outcome }}
+          INTEGRATION: ${{ steps.integration.outcome }}
           BASELINE: ${{ steps.baseline.outcome }}
           BUILD: ${{ steps.build.outcome }}
           ASSETS: ${{ steps.assets.outcome }}
@@ -143,11 +151,11 @@ jobs:
           E2E: ${{ steps.e2e.outcome }}
         run: |
           failed=0
-          for result in "$LOCK" "$INSTALL" "$LINT" "$TYPECHECK" "$UNIT" "$BASELINE" "$BUILD" "$ASSETS" "$BROWSERS" "$E2E"; do
+          for result in "$LOCK" "$INSTALL" "$LINT" "$TYPECHECK" "$UNIT" "$INTEGRATION" "$BASELINE" "$BUILD" "$ASSETS" "$BROWSERS" "$E2E"; do
             if [ "$result" != "success" ]; then failed=1; fi
           done
           if [ "$failed" -ne 0 ]; then
-            echo 'Phase 1 quality gate failed.' >&2
+            echo 'Phase 2 quality gate failed.' >&2
             exit 1
           fi
-          echo 'Phase 1 quality gate passed.'
+          echo 'Phase 2 quality gate passed.'
