@@ -22,19 +22,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Decode boss sprite when stored as Base64 text
+      - name: Validate deployable Letter Bay assets
         shell: bash
         run: |
           set -euo pipefail
-          if [ -f boss-sprite-dropbox-v2.webp ] && grep -q '^UklGR' boss-sprite-dropbox-v2.webp; then
-            base64 -d boss-sprite-dropbox-v2.webp > /tmp/boss-sprite-dropbox-v2.webp
-            mv /tmp/boss-sprite-dropbox-v2.webp boss-sprite-dropbox-v2.webp
+          test -s index.html
+          test -s source.html
+          test -d assets
+          if [ -d assets/bosses ]; then
+            test "$(find assets/bosses -maxdepth 1 -type f -name 'level-*.png' | wc -l)" -eq 10
           fi
-          file boss-sprite-dropbox-v2.webp
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:
