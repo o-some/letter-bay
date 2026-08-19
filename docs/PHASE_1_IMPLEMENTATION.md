@@ -1,6 +1,6 @@
 # Letter Bay V2 – Phase 1 Implementation
 
-Status: **IMPLEMENTED / CI VALIDATION PENDING**
+Status: **PASS – QUALITY GATE GREEN**
 
 ## Ziel
 
@@ -48,6 +48,37 @@ CI prüft:
 9. Boss 1 -> Boss 2,
 10. Bossbilder in Intro/Route/Arena.
 
-## Stop-Gate
+## Validierung
 
-Phase 1 gilt erst als abgeschlossen, wenn CI grün ist und die Phase-1-E2E-Tests die Bossbilder sowie Boss 1 -> Boss 2 erfolgreich bestätigen.
+Finaler isolierter Phase-1-Validierungslauf:
+
+```text
+GitHub Actions Run: 32307481759
+Job: quality
+Conclusion: success
+```
+
+Ergebnisse:
+
+- npm/Lockfile: PASS
+- npm ci: PASS
+- Lint: PASS
+- Typecheck: PASS
+- Unit Tests: PASS
+- Legacy Contract: PASS
+- Astro Build: PASS
+- Asset Integrity: PASS
+- Browser Installation: PASS
+- E2E WebKit/iPhone: PASS
+- E2E Chromium/Desktop: PASS
+- Boss 1 -> Boss 2: PASS
+- Bossbilder Intro/Route/Arena: PASS
+- Scroll-Clamp im E2E: PASS
+
+Der temporäre Validierungs-PR wurde nach erfolgreichem Test geschlossen und nicht gemerged.
+
+## Phase-1-Gate
+
+**BESTANDEN.**
+
+Phase 2 darf auf `feature/letter-bay-v2` beginnen. `main` und der Rollback-Branch bleiben unverändert. Die neue State Machine wird zunächst mit Feature Flag implementiert und darf das bestehende Verhalten nicht verändern.
