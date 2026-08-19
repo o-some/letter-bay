@@ -22,6 +22,8 @@
           return response.text();
         });
 
+        // The old sprite sheet was both fragile and incorrectly transported as text.
+        // Remove every legacy reference before the game document is parsed.
         html=html
           .replaceAll('/tulasisland/letter-bay/bosses/level-01-pirat-kai.webp',firstBoss)
           .replaceAll('boss-sprite-dropbox-v2.webp',firstBoss)
@@ -37,29 +39,122 @@
           );
 
         const bossCss=`<style id="letter-bay-individual-boss-assets">
-          .boss-art,.mini{background:none!important;background-image:none!important;background-size:initial!important;background-position:initial!important;background-repeat:no-repeat!important}
-          .boss-art{width:32%!important;height:96%!important;display:flex!important;align-items:flex-end!important;justify-content:center!important;overflow:visible!important}
+          .boss-art,.mini{
+            background:none!important;
+            background-image:none!important;
+            background-size:initial!important;
+            background-position:initial!important;
+            background-repeat:no-repeat!important;
+          }
+          .boss-art{
+            width:32%!important;
+            height:96%!important;
+            display:flex!important;
+            align-items:flex-end!important;
+            justify-content:center!important;
+            overflow:visible!important;
+          }
           .modal .boss-art{width:180px!important;height:220px!important;margin-inline:auto!important}
-          .mini{height:42px!important;display:flex!important;align-items:center!important;justify-content:center!important;overflow:hidden!important}
-          .letter-bay-boss-image{display:block!important;width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center bottom!important;pointer-events:none!important;user-select:none!important;-webkit-user-drag:none!important;filter:drop-shadow(0 8px 8px rgba(0,16,29,.55))}
+          .mini{
+            height:42px!important;
+            display:flex!important;
+            align-items:center!important;
+            justify-content:center!important;
+            overflow:hidden!important;
+          }
+          .letter-bay-boss-image{
+            display:block!important;
+            width:100%!important;
+            height:100%!important;
+            max-width:100%!important;
+            max-height:100%!important;
+            object-fit:contain!important;
+            object-position:center bottom!important;
+            pointer-events:none!important;
+            user-select:none!important;
+            -webkit-user-drag:none!important;
+            filter:drop-shadow(0 8px 8px rgba(0,16,29,.55));
+          }
           .mini .letter-bay-boss-image{object-position:center!important;filter:none!important}
         </style>`;
 
         const runtimeFix=`<script id="letter-bay-runtime-fix">(()=>{
           const VERSION='${VERSION}';
-          const BOSS_FILES=['level-01-pirat-kai.png','level-02-kapitaen-brax.png','level-03-blackfinn.png','level-04-alt-kapitaen-roderick.png','level-05-piratenbaron-vargas.png','level-06-kapitaen-ironhook.png','level-07-admiral-thorne.png','level-08-kartenmeister-corvin.png','level-09-schattenfuerst-azrak.png','level-10-piratenkoenig-varkos.png'];
+          const BOSS_FILES=[
+            'level-01-pirat-kai.png',
+            'level-02-kapitaen-brax.png',
+            'level-03-blackfinn.png',
+            'level-04-alt-kapitaen-roderick.png',
+            'level-05-piratenbaron-vargas.png',
+            'level-06-kapitaen-ironhook.png',
+            'level-07-admiral-thorne.png',
+            'level-08-kartenmeister-corvin.png',
+            'level-09-schattenfuerst-azrak.png',
+            'level-10-piratenkoenig-varkos.png'
+          ];
           const BOSS_NAMES=['Pirat Kai','Kapitän Brax','Blackfinn','Alt-Kapitän Roderick','Piratenbaron Vargas','Kapitän Ironhook','Admiral Thorne','Kartenmeister Corvin','Schattenfürst Azrak','Piratenkönig Varkos'];
           const bossUrl=index=>new URL('assets/bosses/'+BOSS_FILES[index],document.baseURI).href+'?v='+VERSION;
-          const setBoss=(element,index)=>{if(!element)return;const safeIndex=Math.max(0,Math.min(BOSS_FILES.length-1,index));let image=element.querySelector('.letter-bay-boss-image');if(!image){image=document.createElement('img');image.className='letter-bay-boss-image';image.decoding='async';image.loading=element.classList.contains('mini')?'lazy':'eager';element.replaceChildren(image)}const src=bossUrl(safeIndex);if(image.src!==src)image.src=src;image.alt=BOSS_NAMES[safeIndex];image.dataset.bossIndex=String(safeIndex+1);image.onerror=()=>{console.error('[Letter Bay] Boss image failed:',src);image.alt=BOSS_NAMES[safeIndex]+' – Grafik konnte nicht geladen werden'}};
-          const currentBossIndex=()=>{const levelText=document.getElementById('bossLevel')?.textContent||'';const match=levelText.match(/LEVEL\\s+(\\d+)/i);if(match)return Math.max(0,Math.min(9,Number(match[1])-1));const name=(document.getElementById('bossName')?.textContent||'').trim();const found=BOSS_NAMES.indexOf(name);return found<0?0:found};
-          let syncing=false;const syncBosses=()=>{if(syncing)return;syncing=true;const current=currentBossIndex();setBoss(document.getElementById('bossArt'),current);setBoss(document.getElementById('introArt'),current);document.querySelectorAll('#route .boss-card .mini').forEach((element,index)=>setBoss(element,index));syncing=false};
-          const keepTop=()=>{window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0};
-          const start=document.getElementById('start');if(start){start.addEventListener('click',()=>{keepTop();requestAnimationFrame(keepTop);setTimeout(keepTop,80);setTimeout(keepTop,250)},true);start.addEventListener('touchend',()=>{keepTop();requestAnimationFrame(keepTop);setTimeout(keepTop,80);setTimeout(keepTop,250)},{capture:true,passive:true})}
-          const observer=new MutationObserver(()=>requestAnimationFrame(syncBosses));observer.observe(document.body,{subtree:true,childList:true,characterData:true});syncBosses();requestAnimationFrame(syncBosses);setTimeout(syncBosses,100);setTimeout(syncBosses,500);[0,1].forEach(index=>{const image=new Image();image.src=bossUrl(index)});
+          const setBoss=(element,index)=>{
+            if(!element)return;
+            const safeIndex=Math.max(0,Math.min(BOSS_FILES.length-1,index));
+            let image=element.querySelector('.letter-bay-boss-image');
+            if(!image){
+              image=document.createElement('img');
+              image.className='letter-bay-boss-image';
+              image.decoding='async';
+              image.loading=element.classList.contains('mini')?'lazy':'eager';
+              element.replaceChildren(image);
+            }
+            const src=bossUrl(safeIndex);
+            if(image.src!==src)image.src=src;
+            image.alt=BOSS_NAMES[safeIndex];
+            image.dataset.bossIndex=String(safeIndex+1);
+            image.onerror=()=>{
+              console.error('[Letter Bay] Boss image failed:',src);
+              image.alt=BOSS_NAMES[safeIndex]+' – Grafik konnte nicht geladen werden';
+            };
+          };
+          const currentBossIndex=()=>{
+            const levelText=document.getElementById('bossLevel')?.textContent||'';
+            const match=levelText.match(/LEVEL\\s+(\\d+)/i);
+            if(match)return Math.max(0,Math.min(9,Number(match[1])-1));
+            const name=(document.getElementById('bossName')?.textContent||'').trim();
+            const found=BOSS_NAMES.indexOf(name);
+            return found<0?0:found;
+          };
+          let syncing=false;
+          const syncBosses=()=>{
+            if(syncing)return;
+            syncing=true;
+            const current=currentBossIndex();
+            setBoss(document.getElementById('bossArt'),current);
+            setBoss(document.getElementById('introArt'),current);
+            document.querySelectorAll('#route .boss-card .mini').forEach((element,index)=>setBoss(element,index));
+            syncing=false;
+          };
+          const keepTop=()=>{
+            window.scrollTo(0,0);
+            document.documentElement.scrollTop=0;
+            document.body.scrollTop=0;
+          };
+          const start=document.getElementById('start');
+          if(start){
+            start.addEventListener('click',()=>{keepTop();requestAnimationFrame(keepTop);setTimeout(keepTop,80);setTimeout(keepTop,250)},true);
+            start.addEventListener('touchend',()=>{keepTop();requestAnimationFrame(keepTop);setTimeout(keepTop,80);setTimeout(keepTop,250)},{capture:true,passive:true});
+          }
+          const observer=new MutationObserver(()=>requestAnimationFrame(syncBosses));
+          observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+          syncBosses();
+          requestAnimationFrame(syncBosses);
+          setTimeout(syncBosses,100);
+          setTimeout(syncBosses,500);
+          [0,1].forEach(index=>{const image=new Image();image.src=bossUrl(index)});
         })();<\/script>`;
 
         html=html.replace('</head>',bossCss+'</head>').replace('</body>',runtimeFix+'</body>');
-        document.open();document.write(html);document.close();
+        document.open();
+        document.write(html);
+        document.close();
       }catch(error){
         console.error('[Letter Bay] Bootstrap failed',error);
         document.body.innerHTML='<main style="min-height:100svh;display:grid;place-items:center;padding:24px;text-align:center;background:#021a2e;color:#fff8e8"><div><h1>Letter Bay</h1><p>Das Spiel konnte gerade nicht geladen werden.</p><button onclick="location.reload()" style="padding:12px 18px;border-radius:12px">Erneut laden</button></div></main>';
