@@ -17,53 +17,131 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: '22.23.0'
 
-      - name: Generate lockfile if Phase 1 is the first dependency commit
+      - id: lock
+        name: Ensure dependency lockfile exists
+        continue-on-error: true
         run: |
           if [ ! -f package-lock.json ]; then
             npm install --package-lock-only
           fi
 
-      - name: Install reproducibly
+      - id: install
+        name: Install reproducibly
+        continue-on-error: true
         run: npm ci
 
-      - name: Lint
+      - id: lint
+        name: Lint
+        continue-on-error: true
         run: npm run lint
 
-      - name: Typecheck
+      - id: typecheck
+        name: Typecheck
+        continue-on-error: true
         run: npm run typecheck
 
-      - name: Unit tests
+      - id: unit
+        name: Unit tests
+        continue-on-error: true
         run: npm run test:unit
 
-      - name: Legacy contract
+      - id: baseline
+        name: Legacy contract
+        continue-on-error: true
         run: npm run test:baseline
 
-      - name: Build
+      - id: build
+        name: Build
+        continue-on-error: true
         run: npm run build
 
-      - name: Asset integrity
+      - id: assets
+        name: Asset integrity
+        continue-on-error: true
         run: npm run test:assets
 
-      - name: Install browser engines
+      - id: browsers
+        name: Install browser engines
+        continue-on-error: true
         run: npx playwright install --with-deps chromium webkit
 
-      - name: E2E compatibility and Boss 1 to Boss 2
+      - id: e2e
+        name: E2E compatibility and Boss 1 to Boss 2
+        continue-on-error: true
         run: npm run test:e2e
 
-      - name: Persist generated package-lock
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/letter-bay-v2'
+      - name: Write inspectable Phase 1 CI status
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/feature/letter-bay-v2'
+        env:
+          LOCK: ${{ steps.lock.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+          LINT: ${{ steps.lint.outcome }}
+          TYPECHECK: ${{ steps.typecheck.outcome }}
+          UNIT: ${{ steps.unit.outcome }}
+          BASELINE: ${{ steps.baseline.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          ASSETS: ${{ steps.assets.outcome }}
+          BROWSERS: ${{ steps.browsers.outcome }}
+          E2E: ${{ steps.e2e.outcome }}
         run: |
-          if ! git diff --quiet -- package-lock.json || [ -n "$(git status --porcelain package-lock.json)" ]; then
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add package-lock.json
-            git commit -m 'chore: lock Letter Bay V2 dependencies'
+          mkdir -p docs/ci
+          cat > docs/ci/phase1-status.md <<EOF
+          # Letter Bay V2 – Phase 1 CI Status
+
+          Commit tested: \`${GITHUB_SHA}\`
+
+          | Gate | Outcome |
+          |---|---|
+          | lockfile | ${LOCK} |
+          | npm ci | ${INSTALL} |
+          | lint | ${LINT} |
+          | typecheck | ${TYPECHECK} |
+          | unit | ${UNIT} |
+          | legacy contract | ${BASELINE} |
+          | build | ${BUILD} |
+          | asset integrity | ${ASSETS} |
+          | browser install | ${BROWSERS} |
+          | E2E WebKit + Chromium | ${E2E} |
+
+          Generated automatically by GitHub Actions. A bot commit does not trigger this workflow again.
+          EOF
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/ci/phase1-status.md
+          if [ -f package-lock.json ]; then git add package-lock.json; fi
+          if ! git diff --cached --quiet; then
+            git commit -m 'test: record Letter Bay Phase 1 CI result'
             git push
           fi
+
+      - name: Enforce Phase 1 gate
+        if: always()
+        env:
+          LOCK: ${{ steps.lock.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+          LINT: ${{ steps.lint.outcome }}
+          TYPECHECK: ${{ steps.typecheck.outcome }}
+          UNIT: ${{ steps.unit.outcome }}
+          BASELINE: ${{ steps.baseline.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          ASSETS: ${{ steps.assets.outcome }}
+          BROWSERS: ${{ steps.browsers.outcome }}
+          E2E: ${{ steps.e2e.outcome }}
+        run: |
+          failed=0
+          for result in "$LOCK" "$INSTALL" "$LINT" "$TYPECHECK" "$UNIT" "$BASELINE" "$BUILD" "$ASSETS" "$BROWSERS" "$E2E"; do
+            if [ "$result" != "success" ]; then failed=1; fi
+          done
+          if [ "$failed" -ne 0 ]; then
+            echo 'Phase 1 quality gate failed.' >&2
+            exit 1
+          fi
+          echo 'Phase 1 quality gate passed.'
