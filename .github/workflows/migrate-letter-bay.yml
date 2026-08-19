@@ -1,35 +1,58 @@
-name: Import Letter Bay runtime from pinned Tula source
+name: Import Letter Bay boss assets once
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/migrate-letter-bay.yml'
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  import:
+  import-bosses:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Import pinned game and shared runtime assets
+      - name: Download the ten original transparent Dropbox bosses
         shell: bash
         run: |
           set -euo pipefail
-          BASE='https://raw.githubusercontent.com/o-some/tulasisland/892f676fbcef77ab49373aef7865d60afba0ebb7'
-          mkdir -p assets/creative assets/creative-v2
-          curl -fL "$BASE/public/letter-bay/index.html" -o index.legacy.html
-          curl -fL "$BASE/public/letter-bay/source.html" -o source.legacy.html
-          curl -fL "$BASE/assets/creative/tula_profile.webp" -o assets/creative/tula_profile.webp
-          curl -fL "$BASE/assets/creative/tula_waving.webp" -o assets/creative/tula_waving.webp
-          curl -fL "$BASE/assets/creative/world_harbor.webp" -o assets/creative/world_harbor.webp
-          curl -fL "$BASE/assets/creative-v2/home_cinematic_island.webp" -o assets/creative-v2/home_cinematic_island.webp
-      - name: Commit imported reference files
+          mkdir -p assets/bosses
+          curl -fL --retry 3 'https://ucabc3a5b81fdc1036bda2eaacd6.dl.dropboxusercontent.com/cd/0/get/DGged54JmFw6nm30BV3yN-cy2ZtwUBRkAj9tz5EZwZLyu3Q-1JEKOTDyRyjgn5t54DKG5lioPX9w0WWIHbu1_zsHnkuowxlTvBYAlwt0szdIcgK2u9mvZsH9jEQP-DqzggQ3iK-pr120TTg0dCLAPrgTgCs0sL573KCMMqVZzRU0JA/file?c_luid=88361d58' -o assets/bosses/level-01-pirat-kai.png
+          curl -fL --retry 3 'https://uc0d1d1614bfe3e4d8a407c7c89c.dl.dropboxusercontent.com/cd/0/get/DGh6HOgM8V11GgmY_b_Kn0TKW30jPtP5nJu09O4dTAdyRbu3c6IgUCMpjn7Z_2QvWWe8JrNaHpq0jcekisaU9s6vjjty-fq_ci_iyNwMBnoeE-0dkbLNvMULTkU83HLxJuwQsXX-HyAeYMu32DkYSQFDYnkF4Hxkv5_VVePZF_1DXQ/file?c_luid=88361d58' -o assets/bosses/level-02-kapitaen-brax.png
+          curl -fL --retry 3 'https://ucd244c1b8951fb00e103eb08492.dl.dropboxusercontent.com/cd/0/get/DGgQ9AOSmJnK7fOKFUdPFI_UnKQnTTeh0ih0aTUeEcFCxAn38fVSqs8aRgNenPuZQUxm2WafV7nhHw9fRgAwAJLe0QkzvZOGKuAllGEO0boEVSTVvBniXTwmmyXR2os_jDdBdDS7cpOBLo1z4wp7Vp0kF0_l9fEiEmd9nZh_QkJz9w/file?c_luid=88361d58' -o assets/bosses/level-03-blackfinn.png
+          curl -fL --retry 3 'https://uc5ac05d90ef6d7c6b19eb91f8ae.dl.dropboxusercontent.com/cd/0/get/DGhyhz-M7nazyC4z1KY8QV7ZU5tW6koaiQ-0vMomwy9REPR0AmuX8ajezYsVOKss1janzxsAbWu8cO-7TGHumVYLiRu3x8AHTss2sShj7jvmirHW0MMwMXHCo1a8IGUq8H6BYygKZxTlnoKqD3s35akj93grAlBHv7_DkKKQ8t5rMA/file?c_luid=88361d58' -o assets/bosses/level-04-alt-kapitaen-roderick.png
+          curl -fL --retry 3 'https://uccd9da70d155e1ac9cbcc95666c.dl.dropboxusercontent.com/cd/0/get/DGhmmb2oR-Ff_oVyveOY8ZNkscxE-tgU1GKasRYAvwKezclbNNQsT_v_QpV5-Lhn2Mr5k8jU5F9g6JjdYEDEjN-f_xzGAzcADpEf1GiSDq00wP7HaS_OZHYCOb_kFAfftlY8XwvmDHkqoYOnNlXTtujUeVUsICgRoBRqAu1HWwnF3w/file?c_luid=88361d58' -o assets/bosses/level-05-piratenbaron-vargas.png
+          curl -fL --retry 3 'https://uc2db4ddbe2351f6212420425935.dl.dropboxusercontent.com/cd/0/get/DGiuVcugqN75F_rlukuhPMxuLCXVD6YMde7tBr1pk-2HQLlvzGCPD5vogL9ek-7eUd0rqZI23Gc3aNHJegQdv1xSJkfxjd8DUsFiINU1OYXla9p2eAWu5wHxElZEhzXY_XRnmD4Acqu7m2lqLPBTjnab453ZECyVd4LpTlunPPG6NQ/file?c_luid=88361d58' -o assets/bosses/level-06-kapitaen-ironhook.png
+          curl -fL --retry 3 'https://ucbffdc8228677b22fa69b12fa32.dl.dropboxusercontent.com/cd/0/get/DGiCFEi7fs5AwF9xmMAcsb2dmW6zaXi2szNzLUkZDG7S5IuHobdkmZipgVJQNfg5TrHkQbtwdvA2mCi5t_qoKlQbYRbn7Z0UnPcruRvwz1kLky5dZwLaeX-OolUDKC1b7kz45b8qRHHa0Os8ddidala6f25sEQxXd5mEs-xYU2LAHA/file?c_luid=88361d58' -o assets/bosses/level-07-admiral-thorne.png
+          curl -fL --retry 3 'https://uceaddda7b6688d8eb78dbc399ae.dl.dropboxusercontent.com/cd/0/get/DGj0uCA_U_2fRied5f85AHPwksYo-PVLgZ5el4hDr59sRrJaqxsF4hPP2CIJ918ZJM-A8yiupr-Sr3f847v_vp-Q2JqsqGRhJ91hGhEEmKQHN4PcGoNIhAQ1687ICpu8Z0aacIRSIk1uAor1wZWvvIvKppv4qsFb9OB4q0nGP3wsVw/file?c_luid=88361d58' -o assets/bosses/level-08-kartenmeister-corvin.png
+          curl -fL --retry 3 'https://uce09370fb82371c44e30ab96445.dl.dropboxusercontent.com/cd/0/get/DGjmvdAIrzxWb7T2elyqKE_ct4z09dyMqCDIKUIXx8F8eHdX8LdTvkfqYrvHuQHOe3lSihBc2tKWBVC9HfWr0HYWvXyvej5KDT65I6XKRA3l5UTDzSV4Sg_5CXI0BxjIq4JYPbrFRdb0nZnllRBtFOj3dhfxN8FSJhkEilfLrKDBgg/file?c_luid=88361d58' -o assets/bosses/level-09-schattenfuerst-azrak.png
+          curl -fL --retry 3 'https://uc8db15ef42ac710139d61346974.dl.dropboxusercontent.com/cd/0/get/DGjjKUMnN6FByd3ifJCccCyvrWvVVM84gWLgGH0YmfzPmaD5cctEddeaXG8YnOWO5HofEPRuo5NfIIhtgQw_JsdQvIj9iTEBsSJitKGCinL-J_GDCMXDRjV0Pj1dWIKVkXS6CaHhNuRzEsDjGUvbempsIBr495jnrSHiqxln8u9uTA/file?c_luid=88361d58' -o assets/bosses/level-10-piratenkoenig-varkos.png
+      - name: Verify every asset is a real transparent PNG
+        shell: python
+        run: |
+          from pathlib import Path
+          import struct
+          files=sorted(Path('assets/bosses').glob('level-*.png'))
+          assert len(files)==10, f'Expected 10 bosses, found {len(files)}'
+          for p in files:
+              data=p.read_bytes()
+              assert len(data)>100_000, f'{p} is unexpectedly small'
+              assert data[:8]==b'\x89PNG\r\n\x1a\n', f'{p} is not PNG'
+              width,height=struct.unpack('>II',data[16:24])
+              colour_type=data[25]
+              assert width>300 and height>300, f'{p} dimensions {width}x{height}'
+              assert colour_type in (4,6), f'{p} has no alpha channel (PNG colour type {colour_type})'
+              print(p, width, height, len(data), 'bytes')
+      - name: Commit verified individual boss assets
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.legacy.html source.legacy.html assets/creative assets/creative-v2
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Refresh pinned Letter Bay reference runtime'
+          git add assets/bosses
+          git commit -m 'Add ten verified transparent Letter Bay bosses'
           git push
