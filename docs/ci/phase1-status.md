@@ -1,18 +1,18 @@
 # Letter Bay V2 – Phase 1 CI Status
 
-Commit tested: `6daa7b4cec5b6c01332237bbf973f02460762dd1`
+Commit tested: `13361f7304753f2e50fdaac01c0767de7e266f81`
 
 | Gate | Outcome |
 |---|---|
-| lockfile | failure |
-| npm ci | failure |
-| lint | failure |
-| typecheck | failure |
-| unit | failure |
+| lockfile | success |
+| npm ci | success |
+| lint | success |
+| typecheck | success |
+| unit | success |
 | legacy contract | success |
-| build | failure |
+| build | success |
 | asset integrity | success |
 | browser install | success |
-| E2E WebKit + Chromium | failure |
+| E2E WebKit + Chromium | success |
 
 Generated automatically by GitHub Actions. A bot commit does not trigger this workflow again.
