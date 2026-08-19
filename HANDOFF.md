@@ -11,7 +11,10 @@ Sprachlern-Minispiel für Tula’s Island. Wörter werden gegen eine Piratenflot
 - Baseline `main`: `12c65e56c8f6ec842c643f5a6f236b415603c0d6`
 - Sicherer Rollback-Branch: `backup/letter-bay-before-v2-20260819`
 - V2-Arbeitsbranch: `feature/letter-bay-v2`
-- Aktuelle Phase: **Phase 0 – Baseline**
+- Phase 0: **PASS**
+- Phase 1 – Testnetz und Kompatibilität: **PASS**
+- Nächste Phase: **Phase 2 – State Machine**
+- Finaler Phase-1-Validierungslauf: GitHub Actions `32307481759` / `quality` = `success`
 - `main` darf während der V2-Entwicklung nicht direkt beschrieben werden.
 - Kein Merge ohne ausdrückliche Freigabe.
 
@@ -38,20 +41,38 @@ Sprachlern-Minispiel für Tula’s Island. Wörter werden gegen eine Piratenflot
 - Boss-Intro
 - Piratenflotten-Route
 
-## Phase-0-Befund
+## Phase-1-Architektur
 
-Die aktuelle Runtime ist noch Standalone-HTML ohne Astro/TypeScript/Testsystem.
+Die Legacy-Runtime bleibt unverändert unter `public/legacy/` erhalten. Astro dient nun als sichere Kompatibilitätsschicht mit GitHub-Pages-Base `/letter-bay/`.
 
-Kritische Legacy-Risiken:
+Routing:
 
-1. `source.html` enthält weiterhin CSS-Sprite-Bosslogik.
-2. `index.html` repariert diese Laufzeitdarstellung durch echte `<img>`-Elemente und MutationObserver.
-3. Bossbilder sind in der dokumentierten iPhone-Baseline in Intro und Route sichtbar ausgefallen.
-4. Timer- und Scrollsteuerung ist auf mehrere Stellen verteilt.
-5. Wort-, Boss-, UI- und Spiellogik liegen stark gekoppelt in `source.html`.
-6. GitHub Pages besitzt noch kein Build-/Test-Gate.
+```text
+/letter-bay/                 -> Legacy als sicherer Standard
+/letter-bay/?engine=legacy   -> Legacy
+/letter-bay/?engine=v2       -> V2-Kompatibilität -> Legacy
+```
 
-Vollständiger Befund: `docs/V2_BASELINE.md`.
+Neue V2-Funktionen bleiben per Feature Flags standardmäßig deaktiviert, bis ihre jeweilige Phase vollständig getestet ist.
+
+## Phase-1-Teststatus
+
+Alle verpflichtenden Gates sind grün:
+
+- Lockfile / npm ci
+- Lint
+- Astro/TypeScript Typecheck
+- Unit Tests
+- Legacy Contract
+- Astro Build
+- Boss-/Asset Integrity
+- Playwright Chromium Desktop
+- Playwright WebKit iPhone-Viewport
+- Boss 1 -> Boss 2
+- Bossbilder in Intro, Route und Arena
+- Scroll-Clamp
+
+Details: `docs/PHASE_1_IMPLEMENTATION.md` und `docs/ci/phase1-status.md`.
 
 ## Kritische Regressionstests
 1. Boss 1 starten.
@@ -63,13 +84,35 @@ Vollständiger Befund: `docs/V2_BASELINE.md`.
 7. Kein wachsender Leerraum / unkontrolliertes Scrollen nach neuen Wörtern.
 
 ## Wichtige Dateien
-- `index.html`
-- `source.html`
-- `assets/`
+- `package.json`
+- `astro.config.mjs`
+- `tsconfig.json`
+- `src/pages/index.astro`
+- `src/pages/v2/index.astro`
+- `src/game/featureFlags.ts`
+- `src/game/compatRouter.ts`
+- `public/legacy/index.html`
+- `public/legacy/source.html`
 - `docs/V2_BASELINE.md`
 - `docs/V2_PARITY_CONTRACT.md`
+- `docs/PHASE_1_IMPLEMENTATION.md`
 - `tests/baseline/legacy-contract.mjs`
+- `tests/e2e/phase1-compat.spec.ts`
+- `.github/workflows/ci.yml`
 - `.github/workflows/pages.yml`
+
+## Phase 2 – verbindlicher nächster Schritt
+
+Phase 2 führt eine explizite, typisierte Game State Machine ein. Sie muss zunächst mit `v2StateMachine: false` integriert werden und darf die Legacy-Runtime nicht verändern. Erst nach Unit-, Integration- und E2E-Parität darf die Flag im V2-Pfad testweise aktiviert werden.
+
+Zentrale Ziele:
+
+- explizite Zustände statt `done` + Timer-Kaskaden,
+- zentraler Game State,
+- zentralisierte Events,
+- Eingaben ausschließlich in zulässigen Zuständen,
+- keine dauerhaft blockierenden Übergänge,
+- Boss 1 -> Boss 2 als verpflichtender Regressionstest.
 
 ## Regeln für Codex/ChatGPT
 - Ausschließlich dieses Repo bearbeiten.
