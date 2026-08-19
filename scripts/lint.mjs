@@ -2,7 +2,10 @@ import { readFile, readdir } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 
 const roots = ['src', 'scripts', 'tests'];
-const forbidden = ['/tulasisland/letter-bay/', 'window.location.href = "javascript:'];
+const forbidden = [
+  '/tulasisland/' + 'letter-bay/',
+  'window.location.href = ' + '"javascript:',
+];
 
 async function walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
