@@ -16,11 +16,14 @@ Sprachlern-Minispiel für Tula’s Island. Wörter werden gegen eine Piratenflot
 - Phase 2 – State Machine: **PASS**
 - Phase 3 – Animationsfundament: **PASS**
 - Mobile One-Screen Layout Refinement: **PASS**
+- Cinematic Boss Word Reaction: **PASS**
 - Nächste Phase: **Phase 4 – Lernkarte und Meisteraufgaben**
 - Phase-1-Validierung: GitHub Actions `32307481759` = `success`
 - Phase-2-Validierung: GitHub Actions `32308257027` = `success`
 - Phase-3-Validierung: GitHub Actions `32309129223` = `success`
 - Mobile-Layout-Validierung: Commit `da5f34209da29bafd0b1f9f88f372f51e7965b7b` = alle CI-Gates `success`
+- Boss-Reaction-Validierung: GitHub Actions `32386778964` = `success`
+- Boss-Reaction-Teststand: `ab00b5024c76abfa6814249da1b934819dc80314`
 - `main` darf während der V2-Entwicklung nicht direkt beschrieben werden.
 - Kein Merge ohne ausdrückliche Freigabe.
 
@@ -54,10 +57,10 @@ Die Legacy-Runtime bleibt unverändert unter `public/legacy/` erhalten. Astro di
 ```text
 /letter-bay/                 -> Legacy als sicherer Standard
 /letter-bay/?engine=legacy   -> Legacy
-/letter-bay/?engine=v2       -> V2-Kompatibilität -> Legacy
+/letter-bay/?engine=v2       -> V2 Runtime auf Legacy-Gameplaybasis
 ```
 
-Neue V2-Funktionen bleiben per Feature Flags standardmäßig deaktiviert, bis ihre jeweilige Phase vollständig getestet ist.
+Neue V2-Funktionen bleiben per Feature Flags kontrolliert. Die verifizierten Flags `bossWordReaction` und `bossReactionDialogue` sind im V2-Pfad aktiviert; die Legacy-Route bleibt davon unberührt.
 
 ## Phase-2-State-Machine
 
@@ -88,7 +91,7 @@ Eigenschaften:
 - Animationen verändern den Game State nicht eigenständig,
 - semantische Sequenzen für richtigen/falschen Buchstaben, Wortlösung, Bossintro und Boss-Sieg.
 
-`enhancedAnimations` bleibt weiterhin `false`. Die Legacy-Oberfläche bleibt als funktionaler Fallback erhalten, bis der echte V2-Pfad kontrolliert aktiviert wird.
+`enhancedAnimations` bleibt weiterhin `false`. Die Legacy-Oberfläche bleibt als funktionaler Fallback erhalten, bis der echte V2-Pfad vollständig freigegeben wird.
 
 ## Mobile One-Screen Layout
 
@@ -112,13 +115,47 @@ Dort gilt:
 - Piratenflotte bleibt als kompakte horizontale Leiste sichtbar,
 - extrem kurze beziehungsweise Landschafts-Viewports behalten bewusst die scrollbare Fallback-Darstellung, damit keine Controls abgeschnitten werden.
 
-Automatischer WebKit-Test prüft für den iPhone-Viewport:
+Automatischer WebKit-Test prüft für die iPhone-Viewports:
 
 - `scrollY <= 1`,
 - `scrollHeight <= innerHeight + 2`,
 - `.wrap` endet innerhalb des Viewports,
 - `.route` endet innerhalb des Viewports,
 - die Bedingung bleibt auch nach neuen Wörtern und beim Boss-1-zu-Boss-2-Wechsel erfüllt.
+
+## Cinematic Boss Word Reaction
+
+Die verifizierte Bossreaktion läuft im V2-Pfad nach einem vollständig gelösten Wort automatisch.
+
+Ablauf:
+
+```text
+Wort gelöst
+→ Input Lock
+→ Impact/Glow + kleine Partikel
+→ Boss bewegt sich zur Arenamitte
+→ wechselnder positiver Boss-Spruch
+→ ungefähr 2,5 Sekunden Reaktionszeit
+→ Boss kehrt weich zurück
+→ nächstes Wort
+```
+
+Bei Boss-HP `0` wird ein eigener Kapitulationssatz verwendet und anschließend direkt die Defeat-/Level-Transition ausgeführt.
+
+Technische Sicherheiten:
+
+- 22 normale Reaktionssätze und 10 Kapitulationssätze,
+- keine direkte Satzwiederholung pro Boss und Reaktionstyp,
+- `BOSS_REACTION` als expliziter Input-Lock-Zustand,
+- Controls werden nach der Reaktion auf ihren vorherigen Disabled-State zurückgesetzt,
+- insbesondere der Ganzwort-Submit-Button bleibt nicht mehr versehentlich gesperrt,
+- Boss-Zentralpose wird nach WAAPI-Abschluss explizit als Inline-Transform persistiert, damit WebKit/Safari sie während des Dialogs sichtbar hält,
+- 5-Sekunden-Hard-Timeout und `AbortSignal` verhindern hängende Sequenzen,
+- Reduced Motion wird respektiert,
+- kein `scrollIntoView()` und kein zusätzlicher Layout-Spacer,
+- Bossgrafiken bleiben echte einzelne PNG-Dateien,
+- V2-Ready-Synchronisierung wird nach `document.write()` zuverlässig erneut ausgeführt,
+- Startbutton besitzt einen deduplizierten Touch-/Click-Pfad, damit der Bosskampf auf iPhone per echtem Tap startet.
 
 ## Teststatus
 
@@ -129,17 +166,31 @@ Alle verpflichtenden Gates sind grün:
 - Astro/TypeScript Typecheck
 - Unit Tests
 - AnimationController: finished / timeout / abort / reduced motion / Fehlerpfade
+- Boss-Reaction-Selector / Wiederholungsvermeidung
 - Integration / State-Machine-Parität
-- Animation-Effect-Mapping
+- Boss-Reaction-State und einmalige Reward-Verbuchung
 - Legacy Contract
 - Astro Build
 - Boss-/Asset Integrity
-- Playwright Chromium Desktop
-- Playwright WebKit iPhone-Viewport
+- Playwright Chromium Desktop 1440×900
+- Playwright WebKit iPhone 393×852
+- Playwright WebKit iPhone 430×932
+- echter Touch-/Tap-Start auf WebKit
+- Boss bewegt sich während Dialog sichtbar zur Mitte
+- Boss kehrt nach Dialog zur Ausgangsposition zurück
+- Ganzwort-Submit wird nach Reaktion wieder freigegeben
 - Boss 1 -> Boss 2
 - Bossbilder in Intro, Route und Arena
 - Scroll-Clamp
 - One-Screen-Mobile-Layout ohne vertikales Seitenscrollen
+
+Finaler Boss-Reaction-Gate-Lauf:
+
+```text
+GitHub Actions: 32386778964
+Commit: ab00b5024c76abfa6814249da1b934819dc80314
+Result: SUCCESS
+```
 
 Details:
 
@@ -149,16 +200,20 @@ Details:
 - `docs/ci/phase1-status.md`
 - `docs/ci/phase2-status.md`
 - `docs/ci/phase3-status.md`
+- `tests/e2e/phase1-compat.spec.ts`
+- `tests/e2e/boss-reaction.spec.ts`
 
 ## Kritische Regressionstests
-1. Boss 1 starten.
-2. Drei Wörter lösen.
-3. Boss 2 Intro öffnen.
-4. `Bosskampf starten` auf iPhone muss reagieren.
-5. Nach Bossstart muss die Ansicht oben am Spiel stehen.
-6. Bossgrafik muss in Intro, Arena und Route sichtbar sein.
-7. Kein wachsender Leerraum / unkontrolliertes Scrollen nach neuen Wörtern.
-8. Portrait-iPhone: vollständige Kampfoberfläche bleibt ohne vertikales Seitenscrollen sichtbar.
+1. Boss 1 Intro laden.
+2. `Bosskampf starten` auf iPhone per echtem Tap ausführen.
+3. Drei Wörter lösen.
+4. Nach jedem Wort Bossreaktion zur Mitte und Rückkehr prüfen.
+5. Nach Reaktion Ganzwort-Submit, Hinweis und Tastatur erneut benutzen können.
+6. Boss 2 Intro öffnen.
+7. `Bosskampf starten` bei Boss 2 auf iPhone erneut per Tap ausführen.
+8. Bossgrafik in Intro, Arena und Route sichtbar halten.
+9. Kein wachsender Leerraum / unkontrolliertes Scrollen nach neuen Wörtern.
+10. Portrait-iPhone: vollständige Kampfoberfläche bleibt ohne vertikales Seitenscrollen sichtbar.
 
 ## Phase 4 – verbindlicher nächster Schritt
 
