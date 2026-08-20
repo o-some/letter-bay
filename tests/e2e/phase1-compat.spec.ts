@@ -33,6 +33,31 @@ async function expectBossImages(page: Page) {
   ).toBe(true);
 }
 
+async function expectPortraitAppFitsViewport(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const compact = window.matchMedia('(max-width:760px) and (min-height:620px) and (max-height:1000px)').matches;
+    const root = document.documentElement;
+    const body = document.body;
+    const wrap = document.querySelector('.wrap');
+    const route = document.querySelector('.route');
+    return {
+      compact,
+      innerHeight: window.innerHeight,
+      scrollHeight: Math.max(root.scrollHeight, body.scrollHeight),
+      scrollY: window.scrollY,
+      wrapBottom: wrap?.getBoundingClientRect().bottom ?? 0,
+      routeBottom: route?.getBoundingClientRect().bottom ?? 0,
+    };
+  });
+
+  if (!metrics.compact) return;
+
+  expect(metrics.scrollY).toBeLessThanOrEqual(1);
+  expect(metrics.scrollHeight).toBeLessThanOrEqual(metrics.innerHeight + 2);
+  expect(metrics.wrapBottom).toBeLessThanOrEqual(metrics.innerHeight + 2);
+  expect(metrics.routeBottom).toBeLessThanOrEqual(metrics.innerHeight + 2);
+}
+
 test('legacy is the safe default and all boss assets render', async ({ page }) => {
   await page.goto('/letter-bay/?engine=legacy');
   await expect(page).toHaveURL(/\/letter-bay\/legacy\/index\.html\?engine=legacy/);
@@ -48,11 +73,21 @@ test('V2 entry preserves legacy parity during phase 1', async ({ page }) => {
   await expectBossImages(page);
 });
 
+test('portrait mobile battle fits one app viewport without vertical scrolling', async ({ page }) => {
+  await page.goto('/letter-bay/?engine=v2');
+  await page.locator('#start').click();
+  await expect(page.locator('#intro')).not.toHaveClass(/show/);
+  await expect(page.locator('#keyboard .key')).toHaveCount(29);
+  await expect(page.locator('.route')).toBeVisible();
+  await expectPortraitAppFitsViewport(page);
+});
+
 test('Boss 1 transitions to Boss 2 and remains playable', async ({ page }) => {
   const clues = legacyClueMap();
   await page.goto('/letter-bay/?engine=v2');
   await page.locator('#start').click();
   await expect(page.locator('#intro')).not.toHaveClass(/show/);
+  await expectPortraitAppFitsViewport(page);
 
   for (let round = 0; round < 3; round += 1) {
     await page.locator('#hint').click();
@@ -64,6 +99,7 @@ test('Boss 1 transitions to Boss 2 and remains playable', async ({ page }) => {
     await page.locator('#answer').fill(answer);
     await page.locator('#answerForm button[type="submit"]').click();
     if (round < 2) await expect(page.locator('#answer')).toBeEnabled({ timeout: 5_000 });
+    if (round < 2) await expectPortraitAppFitsViewport(page);
   }
 
   await expect(page.locator('#intro')).toHaveClass(/show/, { timeout: 6_000 });
@@ -75,6 +111,7 @@ test('Boss 1 transitions to Boss 2 and remains playable', async ({ page }) => {
   await expect(page.locator('#bossLevel')).toContainText('LEVEL 2');
   await expect(page.locator('#keyboard .key')).toHaveCount(29);
   await expectLoadedImage(page.locator('#bossArt .letter-bay-boss-image'));
+  await expectPortraitAppFitsViewport(page);
 
   const scrollState = await page.evaluate(() => ({
     y: window.scrollY,
