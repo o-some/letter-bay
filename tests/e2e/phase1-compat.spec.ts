@@ -67,7 +67,15 @@ async function expectPortraitAppFitsViewport(page: Page) {
   expect(metrics.routeBottom).toBeLessThanOrEqual(metrics.innerHeight + 2);
 }
 
-test('legacy is the safe default and all boss assets render', async ({ page }) => {
+test('public root opens the validated V2 engine by default', async ({ page }) => {
+  await page.goto('/letter-bay/');
+  await expect(page).toHaveURL(/\/letter-bay\/v2\/$/);
+  await expect(page.locator('#intro')).toHaveClass(/show/);
+  await expect(page.locator('#introName')).toHaveText('Pirat Kai');
+  await expectBossImages(page);
+});
+
+test('explicit legacy fallback remains available and all boss assets render', async ({ page }) => {
   await page.goto('/letter-bay/?engine=legacy');
   await expect(page).toHaveURL(/\/letter-bay\/legacy\/index\.html\?engine=legacy/);
   await expect(page.locator('#intro')).toHaveClass(/show/);
@@ -83,7 +91,7 @@ test('V2 entry preserves legacy gameplay parity while adding the V2 shell', asyn
 });
 
 test('portrait mobile battle fits one app viewport without vertical scrolling', async ({ page }, testInfo) => {
-  await page.goto('/letter-bay/?engine=v2');
+  await page.goto('/letter-bay/');
   await activateStart(page, testInfo.project.name);
   await expect(page.locator('#keyboard .key')).toHaveCount(29);
   await expect(page.locator('.route')).toBeVisible();
@@ -92,7 +100,7 @@ test('portrait mobile battle fits one app viewport without vertical scrolling', 
 
 test('Boss 1 transitions to Boss 2 and remains playable', async ({ page }, testInfo) => {
   const clues = legacyClueMap();
-  await page.goto('/letter-bay/?engine=v2');
+  await page.goto('/letter-bay/');
   await activateStart(page, testInfo.project.name);
   await expectPortraitAppFitsViewport(page);
 
