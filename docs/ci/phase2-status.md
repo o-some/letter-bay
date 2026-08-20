@@ -1,6 +1,6 @@
 # Letter Bay V2 – Phase 2 CI Status
 
-Commit tested: `da5f34209da29bafd0b1f9f88f372f51e7965b7b`
+Commit tested: `fc9e1b9d77ce4cea7f70c63fe11b461895a5f980`
 
 | Gate | Outcome |
 |---|---|
