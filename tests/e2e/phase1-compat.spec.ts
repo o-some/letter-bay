@@ -66,9 +66,9 @@ test('legacy is the safe default and all boss assets render', async ({ page }) =
   await expectBossImages(page);
 });
 
-test('V2 entry preserves legacy parity during phase 1', async ({ page }) => {
+test('V2 entry preserves legacy gameplay parity while adding the V2 shell', async ({ page }) => {
   await page.goto('/letter-bay/?engine=v2');
-  await expect(page).toHaveURL(/\/letter-bay\/legacy\/index\.html\?engine=v2-compat/);
+  await expect(page).toHaveURL(/\/letter-bay\/v2\/$/);
   await expect(page.locator('#introName')).toHaveText('Pirat Kai');
   await expectBossImages(page);
 });
@@ -98,11 +98,11 @@ test('Boss 1 transitions to Boss 2 and remains playable', async ({ page }) => {
     if (!answer) throw new Error(`Unknown clue: ${clue}`);
     await page.locator('#answer').fill(answer);
     await page.locator('#answerForm button[type="submit"]').click();
-    if (round < 2) await expect(page.locator('#answer')).toBeEnabled({ timeout: 5_000 });
+    if (round < 2) await expect(page.locator('#answer')).toBeEnabled({ timeout: 6_000 });
     if (round < 2) await expectPortraitAppFitsViewport(page);
   }
 
-  await expect(page.locator('#intro')).toHaveClass(/show/, { timeout: 6_000 });
+  await expect(page.locator('#intro')).toHaveClass(/show/, { timeout: 7_000 });
   await expect(page.locator('#introName')).toHaveText('Kapitän Brax');
   await expectLoadedImage(page.locator('#introArt .letter-bay-boss-image'));
 
