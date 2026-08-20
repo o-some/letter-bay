@@ -22,8 +22,9 @@ Sprachlern-Minispiel für Tula’s Island. Wörter werden gegen eine Piratenflot
 - Phase-2-Validierung: GitHub Actions `32308257027` = `success`
 - Phase-3-Validierung: GitHub Actions `32309129223` = `success`
 - Mobile-Layout-Validierung: Commit `da5f34209da29bafd0b1f9f88f372f51e7965b7b` = alle CI-Gates `success`
-- Boss-Reaction-Validierung: GitHub Actions `32386778964` = `success`
-- Boss-Reaction-Teststand: `ab00b5024c76abfa6814249da1b934819dc80314`
+- Boss-Reaction-Funktionsvalidierung: GitHub Actions `32386778964` = `success`
+- Vollständiger finaler Branch-Gate nach Dokumentation: GitHub Actions `32387350144` = `success`
+- Finaler Branch-Stand: `6ec360e26454dcd1dabef36d5a7ba951e14e012d`
 - `main` darf während der V2-Entwicklung nicht direkt beschrieben werden.
 - Kein Merge ohne ausdrückliche Freigabe.
 
@@ -184,11 +185,11 @@ Alle verpflichtenden Gates sind grün:
 - Scroll-Clamp
 - One-Screen-Mobile-Layout ohne vertikales Seitenscrollen
 
-Finaler Boss-Reaction-Gate-Lauf:
+Finaler vollständiger Branch-Gate:
 
 ```text
-GitHub Actions: 32386778964
-Commit: ab00b5024c76abfa6814249da1b934819dc80314
+GitHub Actions: 32387350144
+Commit: 6ec360e26454dcd1dabef36d5a7ba951e14e012d
 Result: SUCCESS
 ```
 
