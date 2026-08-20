@@ -196,7 +196,7 @@ const STANDARD_PRESETS: Readonly<Record<AnimationName, AnimationPreset>> = Objec
   bossReactionReturn: {
     keyframes: [
       { transform: 'translate3d(var(--lb-boss-reaction-dx,0px),0,0) scale(var(--lb-boss-reaction-scale,1.14))', filter: 'brightness(1.08)' },
-      { transform: 'translate3d(calc(var(--lb-boss-reaction-dx,0px) * .12),0,0) scale(1.015)', filter: 'brightness(1.02)', offset: .82 },
+      { transform: 'translate3d(0,0,0) scale(1.015)', filter: 'brightness(1.02)', offset: .82 },
       { transform: 'translate3d(0,0,0) scale(1)', filter: 'brightness(1)' },
     ],
     options: { duration: 520, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' },
