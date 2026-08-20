@@ -29,6 +29,16 @@ export default defineConfig({
       },
     },
     {
+      name: 'webkit-iphone-large',
+      use: {
+        browserName: 'webkit',
+        viewport: { width: 430, height: 932 },
+        deviceScaleFactor: 3,
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
+    {
       name: 'chromium-desktop',
       use: {
         browserName: 'chromium',
