@@ -1,6 +1,6 @@
 # Letter Bay V2 – Boss Reaction Staging Failure
 
-Commit tested: `d29a3d605f194a64fcd0cf546cfa08dbc2e6c0a2`
+Commit tested: `a1e03d27a8b9575d317393923ba1b64b647f1728`
 
 | Gate | Outcome |
 |---|---|
@@ -23,25 +23,22 @@ Commit tested: `d29a3d605f194a64fcd0cf546cfa08dbc2e6c0a2`
 > letter-bay@2.0.0-alpha.1 typecheck
 > astro check
 
-[2m08:23:47[22m [34m[types][39m Generated [2m114ms[22m
-[2m08:23:47[22m [34m[check][39m Getting diagnostics for Astro files in /home/runner/work/letter-bay/letter-bay...
+[2m08:27:38[22m [34m[types][39m Generated [2m98ms[22m
+[2m08:27:38[22m [34m[check][39m Getting diagnostics for Astro files in /home/runner/work/letter-bay/letter-bay...
 [96msrc/game/animationEffects.ts[0m:[93m23[0m:[93m7[0m - [93mwarning[0m[90m ts(7027): [0mUnreachable code detected.
 
 [7m23[0m       return [];
 [7m  [0m [93m      ~~~~~~~~~~[0m
 
-[96mtests/integration/animationEffects.test.ts[0m:[93m15[0m:[93m5[0m - [91merror[0m[90m ts(2741): [0mProperty 'bossWordReaction' is missing in type '{ correctLetter: Mock<() => Promise<{ name: "celebrate"; outcome: "finished"; reducedMotion: boolean; elapsedMs: number; }[]>>; wrongLetter: Mock<() => Promise<{ name: "celebrate"; outcome: "finished"; reducedMotion: boolean; elapsedMs: number; }[]>>; wordSolved: Mock<...>; bossIntro: Mock<...>; bossDefeated: Mock<....' but required in type 'BattleAnimationSequences'.
+[96mtests/integration/animationEffects.test.ts[0m:[93m49[0m:[93m37[0m - [91merror[0m[90m ts(2345): [0mArgument of type '{ type: "PLAY_BOSS_REACTION"; defeated: false; }' is not assignable to parameter of type 'GameEffect'.
+  Property 'bossIndex' is missing in type '{ type: "PLAY_BOSS_REACTION"; defeated: false; }' but required in type '{ type: "PLAY_BOSS_REACTION"; bossIndex: number; defeated: boolean; }'.
 
-[7m15[0m     api: {
-[7m  [0m [91m    ~~~[0m
-[96mtests/integration/animationEffects.test.ts[0m:[93m7[0m:[93m19[0m - [93mwarning[0m[90m ts(6133): [0m'name' is declared but its value is never read.
-
-[7m7[0m   const result = (name: string) => [{
-[7m [0m [93m                  ~~~~[0m
+[7m49[0m     await expect(runAnimationEffect({ type: 'PLAY_BOSS_REACTION', defeated: false }, api, {})).resolves.toEqual([]);
+[7m  [0m [91m                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
 
 Result (25 files): 
 - 1 error
 - 0 warnings
-- 2 hints
+- 1 hint
 
 ```
