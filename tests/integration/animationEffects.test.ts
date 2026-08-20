@@ -4,7 +4,7 @@ import type { BattleAnimationSequences } from '../../src/game/battleAnimations';
 
 function sequences(): { api: BattleAnimationSequences; calls: string[] } {
   const calls: string[] = [];
-  const result = (name: string) => [{
+  const result = () => [{
     name: 'celebrate' as const,
     outcome: 'finished' as const,
     reducedMotion: false,
@@ -13,11 +13,16 @@ function sequences(): { api: BattleAnimationSequences; calls: string[] } {
   return {
     calls,
     api: {
-      correctLetter: vi.fn(async () => { calls.push('correct'); return result('correct'); }),
-      wrongLetter: vi.fn(async () => { calls.push('wrong'); return result('wrong'); }),
-      wordSolved: vi.fn(async () => { calls.push('word'); return result('word'); }),
-      bossIntro: vi.fn(async () => { calls.push('intro'); return result('intro'); }),
-      bossDefeated: vi.fn(async () => { calls.push('defeated'); return result('defeated'); }),
+      correctLetter: vi.fn(async () => { calls.push('correct'); return result(); }),
+      wrongLetter: vi.fn(async () => { calls.push('wrong'); return result(); }),
+      wordSolved: vi.fn(async () => { calls.push('word'); return result(); }),
+      bossIntro: vi.fn(async () => { calls.push('intro'); return result(); }),
+      bossDefeated: vi.fn(async () => { calls.push('defeated'); return result(); }),
+      bossWordReaction: vi.fn(async () => ({
+        results: result(),
+        skipped: false,
+        reducedMotion: false,
+      })),
     },
   };
 }
@@ -41,6 +46,7 @@ describe('typed game effects map to semantic animation sequences', () => {
     await expect(runAnimationEffect({ type: 'REQUEST_NEXT_WORD' }, api, {})).resolves.toEqual([]);
     await expect(runAnimationEffect({ type: 'SHOW_LOSS' }, api, {})).resolves.toEqual([]);
     await expect(runAnimationEffect({ type: 'LOG_ERROR', message: 'test' }, api, {})).resolves.toEqual([]);
+    await expect(runAnimationEffect({ type: 'PLAY_BOSS_REACTION', defeated: false }, api, {})).resolves.toEqual([]);
     expect(calls).toEqual([]);
   });
 });
