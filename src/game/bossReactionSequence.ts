@@ -57,14 +57,14 @@ function outcomeToStatus(outcome: AnimationOutcome): BossReactionStatus | null {
 function delay(ms: number, signal: AbortSignal): Promise<'finished' | 'aborted'> {
   if (signal.aborted) return Promise.resolve('aborted');
   return new Promise((resolve) => {
-    const timer = setTimeout(() => {
-      signal.removeEventListener('abort', onAbort);
-      resolve('finished');
-    }, ms);
     const onAbort = () => {
       clearTimeout(timer);
       resolve('aborted');
     };
+    const timer = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort);
+      resolve('finished');
+    }, ms);
     signal.addEventListener('abort', onAbort, { once: true });
   });
 }
@@ -146,6 +146,8 @@ export async function playBossWordReaction(
   const cleanup = () => {
     input.dialogue.hidden = true;
     input.dialogue.removeAttribute('data-visible');
+    input.boss.style.removeProperty('transform');
+    input.boss.style.removeProperty('filter');
     input.boss.style.removeProperty('--lb-boss-reaction-dx');
     input.boss.style.removeProperty('--lb-boss-reaction-scale');
     input.boss.style.removeProperty('--lb-boss-reaction-overshoot');
@@ -172,11 +174,20 @@ export async function playBossWordReaction(
 
     const impact = await play('bossReactionImpact', input.boss);
     const impactStatus = outcomeToStatus(impact.outcome);
-    if (impactStatus === 'aborted') return { status: hardTimedOut ? 'timeout' : 'aborted', animationResults: results, elapsedMs: now() - startedAt };
+    if (impactStatus === 'aborted') {
+      return { status: hardTimedOut ? 'timeout' : 'aborted', animationResults: results, elapsedMs: now() - startedAt };
+    }
 
     const advance = await play('bossReactionAdvance', input.boss);
     const advanceStatus = outcomeToStatus(advance.outcome);
-    if (advanceStatus === 'aborted') return { status: hardTimedOut ? 'timeout' : 'aborted', animationResults: results, elapsedMs: now() - startedAt };
+    if (advanceStatus === 'aborted') {
+      return { status: hardTimedOut ? 'timeout' : 'aborted', animationResults: results, elapsedMs: now() - startedAt };
+    }
+
+    // WebKit can discard a finished WAAPI transform once the Animation object becomes collectable.
+    // Persist the cinematic center pose as inline transform for the dialogue hold, then animate back.
+    input.boss.style.transform = `translate3d(${dx.toFixed(2)}px,0,0) scale(${scale.toFixed(3)})`;
+    input.boss.style.filter = 'brightness(1.08)';
 
     input.dialogue.hidden = false;
     input.dialogue.setAttribute('data-visible', 'true');
@@ -185,7 +196,12 @@ export async function playBossWordReaction(
       return { status: hardTimedOut ? 'timeout' : 'aborted', animationResults: results, elapsedMs: now() - startedAt };
     }
 
-    const holdResult = await hold(input.dialogue, reducedMotion ? Math.min(holdMs, 1800) : holdMs, minSkipMs, localAbort.signal);
+    const holdResult = await hold(
+      input.dialogue,
+      reducedMotion ? Math.min(holdMs, 1800) : holdMs,
+      minSkipMs,
+      localAbort.signal,
+    );
     if (holdResult === 'aborted') {
       return { status: hardTimedOut ? 'timeout' : 'aborted', animationResults: results, elapsedMs: now() - startedAt };
     }
@@ -196,8 +212,12 @@ export async function playBossWordReaction(
 
     const exit = await play(input.defeated ? 'bossReactionDefeat' : 'bossReactionReturn', input.boss);
     const exitStatus = outcomeToStatus(exit.outcome);
-    if (exitStatus === 'timeout') return { status: 'timeout', animationResults: results, elapsedMs: now() - startedAt };
-    if (exitStatus === 'aborted') return { status: hardTimedOut ? 'timeout' : 'aborted', animationResults: results, elapsedMs: now() - startedAt };
+    if (exitStatus === 'timeout') {
+      return { status: 'timeout', animationResults: results, elapsedMs: now() - startedAt };
+    }
+    if (exitStatus === 'aborted') {
+      return { status: hardTimedOut ? 'timeout' : 'aborted', animationResults: results, elapsedMs: now() - startedAt };
+    }
     if (exitStatus === 'fallback' || advanceStatus === 'fallback' || impactStatus === 'fallback') {
       return { status: 'fallback', animationResults: results, elapsedMs: now() - startedAt };
     }
