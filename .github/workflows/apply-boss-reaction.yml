@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  apply-and-verify:
+  apply:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,45 +28,7 @@ jobs:
           test -s public/legacy/index.html
           test -s tests/e2e/phase1-compat.spec.ts
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Pin npm
-        run: npm install --global npm@11.19.0
-
-      - name: Install
-        run: npm ci --no-audit --no-fund
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Unit tests
-        run: npm run test:unit
-
-      - name: Integration tests
-        run: npm run test:integration
-
-      - name: Legacy contract
-        run: npm run test:baseline
-
-      - name: Build
-        run: npm run build
-
-      - name: Asset integrity
-        run: npm run test:assets
-
-      - name: Install browsers
-        run: npx playwright install --with-deps chromium webkit
-
-      - name: E2E WebKit iPhone + Chromium + Boss 1 to Boss 2
-        run: npm run test:e2e
-
-      - name: Commit verified implementation
+      - name: Commit implementation for canonical CI verification
         shell: bash
         run: |
           set -euo pipefail
