@@ -4,6 +4,18 @@ Alle wesentlichen Änderungen an Letter Bay werden hier dokumentiert.
 
 ## [Unreleased] – Letter Bay V2
 
+### Mobile App Layout Refinement
+
+- Portrait-Mobile-Layout so verdichtet, dass die komplette Kampfoberfläche auf typischen iPhone-Viewports ohne vertikales Seitenscrollen sichtbar bleibt.
+- vertikale Abstände, HUD, Arena, Wortbereich, Tastatur, Tools und Piratenflotten-Route um ca. 10–15 % kompakter gestaltet, ohne die horizontale Lesbarkeit unnötig zu verkleinern.
+- `100dvh`, Safe-Area-Padding und ein festes Grid für Header, Hero, HP, Arena, Puzzle und Route eingeführt.
+- sehr kurze/landschaftliche Viewports bewusst vom No-Scroll-Modus ausgenommen, damit dort nichts abgeschnitten wird.
+- Route als kompakte horizontale App-Leiste am unteren Rand erhalten.
+- E2E-Regressionsprüfung ergänzt: auf dem WebKit-iPhone-Viewport dürfen `scrollHeight`, Wrap-Bottom und Route-Bottom den sichtbaren Viewport nicht überschreiten.
+- Boss 1 → Boss 2, Bossbilder, Build, Typecheck, Unit, Integration, Asset Integrity sowie WebKit/Chromium E2E bleiben grün.
+- getesteter Layout-Commit: `da5f34209da29bafd0b1f9f88f372f51e7965b7b`.
+- `main` und Rollback-Branch unverändert gelassen.
+
 ### Phase 3 – Animationsfundament
 
 - zentralen `AnimationController` mit Promise-basiertem Abschluss über `animation.finished` eingeführt.
