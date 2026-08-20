@@ -19,9 +19,15 @@ function startWord(machine: GameMachine, wordId: string) {
 function solveCurrentWord(machine: GameMachine) {
   machine.dispatch({ type: 'FULL_WORD_GUESSED', correct: true });
   expect(machine.state.phase).toBe('WORD_SOLVED');
-  machine.dispatch({ type: 'WORD_REWARD_RESOLVED' });
-  expect(machine.state.phase).toBe('BOSS_HIT');
-  machine.dispatch({ type: 'BOSS_HIT_RESOLVED' });
+  const rewarded = machine.dispatch({ type: 'WORD_REWARD_RESOLVED' });
+  expect(machine.state.phase).toBe('BOSS_REACTION');
+  expect(rewarded.effects).toContainEqual({
+    type: 'PLAY_BOSS_REACTION',
+    bossIndex: machine.state.bossIndex,
+    defeated: machine.state.bossHp === 0,
+  });
+  machine.dispatch({ type: 'BOSS_REACTION_RESOLVED' });
+  if (machine.state.phase === 'BOSS_HIT') machine.dispatch({ type: 'BOSS_HIT_RESOLVED' });
 }
 
 describe('Legacy parity flows through the typed state machine', () => {
@@ -68,6 +74,7 @@ describe('Legacy parity flows through the typed state machine', () => {
 
     machine.dispatch({ type: 'FULL_WORD_GUESSED', correct: true });
     machine.dispatch({ type: 'WORD_REWARD_RESOLVED' });
+    machine.dispatch({ type: 'BOSS_REACTION_RESOLVED' });
     machine.dispatch({ type: 'BOSS_HIT_RESOLVED' });
     machine.dispatch({ type: 'WORD_READY', wordId: 'word-b' });
 
