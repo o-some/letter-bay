@@ -1,6 +1,6 @@
 # Letter Bay V2 – Boss Reaction Staging Failure
 
-Commit tested: `a1e03d27a8b9575d317393923ba1b64b647f1728`
+Commit tested: `ee594d3155e48e77713c0f752047549eccfabb00`
 
 | Gate | Outcome |
 |---|---|
@@ -23,21 +23,33 @@ Commit tested: `a1e03d27a8b9575d317393923ba1b64b647f1728`
 > letter-bay@2.0.0-alpha.1 typecheck
 > astro check
 
-[2m08:27:38[22m [34m[types][39m Generated [2m98ms[22m
-[2m08:27:38[22m [34m[check][39m Getting diagnostics for Astro files in /home/runner/work/letter-bay/letter-bay...
+[2m10:03:23[22m [34m[types][39m Generated [2m102ms[22m
+[2m10:03:23[22m [34m[check][39m Getting diagnostics for Astro files in /home/runner/work/letter-bay/letter-bay...
 [96msrc/game/animationEffects.ts[0m:[93m23[0m:[93m7[0m - [93mwarning[0m[90m ts(7027): [0mUnreachable code detected.
 
 [7m23[0m       return [];
 [7m  [0m [93m      ~~~~~~~~~~[0m
 
-[96mtests/integration/animationEffects.test.ts[0m:[93m49[0m:[93m37[0m - [91merror[0m[90m ts(2345): [0mArgument of type '{ type: "PLAY_BOSS_REACTION"; defeated: false; }' is not assignable to parameter of type 'GameEffect'.
-  Property 'bossIndex' is missing in type '{ type: "PLAY_BOSS_REACTION"; defeated: false; }' but required in type '{ type: "PLAY_BOSS_REACTION"; bossIndex: number; defeated: boolean; }'.
+[96msrc/game/bossReactionSequence.ts[0m:[93m197[0m:[93m29[0m - [91merror[0m[90m ts(2345): [0mArgument of type '"bossReactionDefeat" | "bossReactionReturn"' is not assignable to parameter of type 'AnimationName'.
+  Type '"bossReactionDefeat"' is not assignable to type 'AnimationName'.
 
-[7m49[0m     await expect(runAnimationEffect({ type: 'PLAY_BOSS_REACTION', defeated: false }, api, {})).resolves.toEqual([]);
-[7m  [0m [91m                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m197[0m     const exit = await play(input.defeated ? 'bossReactionDefeat' : 'bossReactionReturn', input.boss);
+[7m   [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/game/bossReactionSequence.ts[0m:[93m193[0m:[93m16[0m - [91merror[0m[90m ts(2345): [0mArgument of type '"bossReactionDialogueOut"' is not assignable to parameter of type 'AnimationName'.
 
-Result (25 files): 
-- 1 error
+[7m193[0m     await play('bossReactionDialogueOut', input.dialogue);
+[7m   [0m [91m               ~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/game/bossReactionSequence.ts[0m:[93m183[0m:[93m35[0m - [91merror[0m[90m ts(2345): [0mArgument of type '"bossReactionDialogueIn"' is not assignable to parameter of type 'AnimationName'.
+
+[7m183[0m     const dialogueIn = await play('bossReactionDialogueIn', input.dialogue);
+[7m   [0m [91m                                  ~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/game/bossReactionSequence.ts[0m:[93m177[0m:[93m32[0m - [91merror[0m[90m ts(2345): [0mArgument of type '"bossReactionAdvance"' is not assignable to parameter of type 'AnimationName'.
+
+[7m177[0m     const advance = await play('bossReactionAdvance', input.boss);
+[7m   [0m [91m                               ~~~~~~~~~~~~~~~~~~~~~[0m
+
+Result (26 files): 
+- 4 errors
 - 0 warnings
 - 1 hint
 
