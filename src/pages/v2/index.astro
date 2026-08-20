@@ -1,0 +1,109 @@
+---
+import '../../styles/tokens.css';
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#021a2e" />
+    <title>Letter Bay V2</title>
+  </head>
+  <body>
+    <main class="compat" data-engine="v2-reaction">
+      <div>
+        <small>LETTER BAY V2</small>
+        <strong>Bosskampf wird geladen …</strong>
+      </div>
+    </main>
+
+    <script>
+      import { featureFlags } from '../../game/featureFlags';
+      import { installBossReactionRuntime } from '../../game/bossReactionBrowser';
+
+      const base = import.meta.env.BASE_URL.endsWith('/')
+        ? import.meta.env.BASE_URL
+        : `${import.meta.env.BASE_URL}/`;
+      const params = new URLSearchParams(window.location.search);
+      const forcedReaction = params.get('bossReaction') === '1';
+      const reactionEnabled = featureFlags.bossWordReaction || forcedReaction;
+      const dialogueEnabled = featureFlags.bossReactionDialogue || forcedReaction;
+
+      installBossReactionRuntime({ baseUrl: base, enabled: reactionEnabled, dialogueEnabled });
+
+      const firstBoss = `${base}assets/bosses/level-01-pirat-kai.png?v=v2-boss-reaction`;
+      const legacySourceUrl = `${base}legacy/source.html?v=v2-boss-reaction`;
+      const oldAbsoluteBossPath = '/tulasisland/' + 'letter-bay/bosses/level-01-pirat-kai.webp';
+      const reactionTail = "if(bhp<=0){shells+=12;hud();advanceTimer=setTimeout(bossDown,950)}else{advanceTimer=setTimeout(()=>nextWord(true),950)}}";
+      const patchedReactionTail = "if(bhp<=0){shells+=12;hud();if(window.__lbBossReaction){window.__lbBossReaction({defeated:true,bossIndex:boss,bossName:B[boss][0]}).then(()=>bossDown(),()=>bossDown())}else{advanceTimer=setTimeout(bossDown,950)}}else{if(window.__lbBossReaction){window.__lbBossReaction({defeated:false,bossIndex:boss,bossName:B[boss][0]}).then(()=>nextWord(true),()=>nextWord(true))}else{advanceTimer=setTimeout(()=>nextWord(true),950)}}}";
+      const legacyStartListener = "$('#start').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();$('#intro').classList.remove('show');nextWord(false)});";
+      const hardenedStartListener = "(()=>{const s=$('#start');let lbStartBusy=false;const begin=e=>{e?.preventDefault?.();e?.stopPropagation?.();if(lbStartBusy)return;if($('#introLevel')?.textContent==='GESCHAFFT'){location.reload();return}lbStartBusy=true;$('#intro').classList.remove('show');nextWord(false);setTimeout(()=>{lbStartBusy=false},360)};s.addEventListener('touchend',begin,{passive:false});s.addEventListener('click',begin)})();";
+
+      try {
+        let html = await fetch(legacySourceUrl, { cache: 'no-store' }).then((response) => {
+          if (!response.ok) throw new Error(`legacy source ${response.status}`);
+          return response.text();
+        });
+
+        if (!html.includes(reactionTail)) {
+          throw new Error('Letter Bay V2 reaction patch target was not found');
+        }
+        if (!html.includes(legacyStartListener)) {
+          throw new Error('Letter Bay V2 start-button patch target was not found');
+        }
+
+        html = html
+          .replace('<head>', `<head><base href="${base}"><link rel="stylesheet" href="${base}v2.css?v=v2-boss-reaction">`)
+          .replaceAll(oldAbsoluteBossPath, firstBoss)
+          .replaceAll('boss-sprite-dropbox-v2.webp', firstBoss)
+          .replaceAll('boss-sprite-dropbox.webp', firstBoss)
+          .replaceAll('boss-sprite.avif', firstBoss)
+          .replace(
+            '<div class="fighter boss-art" id="bossArt" role="img"></div>',
+            `<div class="fighter boss-art" id="bossArt" role="img"><img class="letter-bay-boss-image" src="${firstBoss}" alt="Pirat Kai"></div>`,
+          )
+          .replace(
+            '<div class="boss-art" id="introArt"></div>',
+            `<div class="boss-art" id="introArt"><img class="letter-bay-boss-image" src="${firstBoss}" alt="Pirat Kai"></div>`,
+          )
+          .replace(reactionTail, patchedReactionTail)
+          .replace(legacyStartListener, hardenedStartListener)
+          .replace(
+            '</body>',
+            `<script>(()=>{const ready=()=>window.__lbV2Ready?.();ready();requestAnimationFrame(ready);setTimeout(ready,80);setTimeout(ready,260)})();<\/script></body>`,
+          );
+
+        document.open();
+        document.write(html);
+        document.close();
+      } catch (error) {
+        console.error('[Letter Bay V2] bootstrap failed', error);
+        document.body.innerHTML = '<main class="compat"><div><strong>Letter Bay</strong><p>Der sichere V2-Modus konnte gerade nicht geladen werden.</p><a href="../?engine=legacy">Sicheren Modus starten</a></div></main>';
+      }
+    </script>
+  </body>
+</html>
+
+<style>
+  .compat {
+    min-height: 100svh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    text-align: center;
+  }
+  .compat small {
+    display: block;
+    color: var(--lb-turquoise);
+    letter-spacing: 0.16em;
+    font-weight: 900;
+  }
+  .compat strong {
+    display: block;
+    margin-top: 8px;
+    color: var(--lb-gold);
+    font: 900 2rem Georgia, serif;
+  }
+  .compat a { color: var(--lb-gold); }
+</style>

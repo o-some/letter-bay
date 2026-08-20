@@ -1,0 +1,20 @@
+:root {
+  color-scheme: dark;
+  --lb-navy: #021a2e;
+  --lb-gold: #e4b84d;
+  --lb-cream: #fff8e8;
+  --lb-turquoise: #55d5c8;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--lb-navy);
+  color: var(--lb-cream);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}

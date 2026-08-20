@@ -1,0 +1,38 @@
+{
+  "normal": [
+    "Wow – das hast du richtig gut gemacht!",
+    "Stark! Damit habe ich nicht gerechnet.",
+    "Respekt! Das war ein richtig guter Treffer.",
+    "Nicht schlecht – du wirst immer besser!",
+    "Autsch! Das Wort saß.",
+    "Sehr gut gelöst!",
+    "Du bist schlauer, als ich dachte.",
+    "Okay, okay – das war stark!",
+    "Das war ein Volltreffer.",
+    "Du hast mich erwischt!",
+    "Unglaublich – das war richtig gut.",
+    "Da muss ich mich wohl mehr anstrengen.",
+    "Wow! Du lernst wirklich schnell.",
+    "Das war clever gelöst.",
+    "Starker Zug!",
+    "Nicht übel, kleine Sprachpiratin!",
+    "Den Treffer habe ich gespürt.",
+    "Sehr stark – weiter so!",
+    "Dieses Wort gehörte eindeutig dir.",
+    "Okay, diese Runde geht an dich!",
+    "Arrr – das war beeindruckend gelöst!",
+    "Du hast Köpfchen. Das muss ich dir lassen."
+  ],
+  "defeated": [
+    "Wow – du hast mich besiegt. Ich gebe mich geschlagen!",
+    "Respekt! Diesen Kampf hast du gewonnen.",
+    "Arrr … ich gebe auf. Du warst zu stark!",
+    "Okay, ich kapituliere. Das war beeindruckend.",
+    "Du hast gewonnen – verdient!",
+    "Ich ziehe mich zurück. Du hast mich überzeugt.",
+    "Stark gespielt. Ich gebe mich geschlagen.",
+    "Diese Runde gehört dir. Respekt!",
+    "Meine Flagge ist unten – du hast gewonnen!",
+    "Ich kapituliere. Dein Wissen war stärker."
+  ]
+}

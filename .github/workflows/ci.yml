@@ -1,0 +1,69 @@
+name: Letter Bay V2 CI
+
+on:
+  push:
+    branches:
+      - feature/letter-bay-v2
+  pull_request:
+    branches:
+      - main
+      - feature/letter-bay-v2
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: letter-bay-v2-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Pin npm 11 for deterministic dependency resolution
+        run: |
+          npm install --global npm@11.19.0
+          npm --version
+
+      - name: Install reproducibly
+        run: npm ci --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Integration tests
+        run: npm run test:integration
+
+      - name: Legacy contract
+        run: npm run test:baseline
+
+      - name: Build
+        run: npm run build
+
+      - name: Asset integrity
+        run: npm run test:assets
+
+      - name: Install browser engines
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: E2E WebKit iPhone 393 + iPhone 430 + Chromium + Boss 1 to Boss 2
+        run: npm run test:e2e
+
+      - name: Boss reaction quality gate passed
+        run: echo 'Letter Bay V2 boss reaction quality gate passed.'
