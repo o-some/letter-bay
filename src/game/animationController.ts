@@ -9,7 +9,13 @@ export type AnimationName =
   | 'wordSolved'
   | 'bossIntro'
   | 'bossDefeated'
-  | 'celebrate';
+  | 'celebrate'
+  | 'bossReactionImpact'
+  | 'bossReactionAdvance'
+  | 'bossReactionDialogueIn'
+  | 'bossReactionDialogueOut'
+  | 'bossReactionReturn'
+  | 'bossReactionDefeat';
 
 export type AnimationOutcome =
   | 'finished'
@@ -151,6 +157,59 @@ const STANDARD_PRESETS: Readonly<Record<AnimationName, AnimationPreset>> = Objec
     ],
     options: { duration: 560, easing: 'cubic-bezier(.2,.9,.25,1)' },
     timeoutMs: 950,
+  },
+  bossReactionImpact: {
+    keyframes: [
+      { transform: 'translate3d(0,0,0) scale(1)', filter: 'brightness(1)' },
+      { transform: 'translate3d(-3px,-1px,0) scale(1.035)', filter: 'brightness(2)', offset: .48 },
+      { transform: 'translate3d(0,0,0) scale(1)', filter: 'brightness(1.15)' },
+    ],
+    options: { duration: 150, easing: 'ease-out' },
+    timeoutMs: 420,
+  },
+  bossReactionAdvance: {
+    keyframes: [
+      { transform: 'translate3d(0,0,0) scale(1)', filter: 'brightness(1.1)' },
+      { transform: 'translate3d(var(--lb-boss-reaction-dx,0px),-2px,0) scale(var(--lb-boss-reaction-scale,1.14))', filter: 'brightness(1.28)', offset: .72 },
+      { transform: 'translate3d(var(--lb-boss-reaction-dx,0px),0,0) scale(var(--lb-boss-reaction-overshoot,1.17))', filter: 'brightness(1.18)', offset: .88 },
+      { transform: 'translate3d(var(--lb-boss-reaction-dx,0px),0,0) scale(var(--lb-boss-reaction-scale,1.14))', filter: 'brightness(1.08)' },
+    ],
+    options: { duration: 560, easing: 'cubic-bezier(.2,.9,.25,1.15)', fill: 'forwards' },
+    timeoutMs: 900,
+  },
+  bossReactionDialogueIn: {
+    keyframes: [
+      { transform: 'translateY(8px) scale(.96)', opacity: 0 },
+      { transform: 'translateY(0) scale(1)', opacity: 1 },
+    ],
+    options: { duration: 220, easing: 'cubic-bezier(.2,.85,.25,1)', fill: 'forwards' },
+    timeoutMs: 480,
+  },
+  bossReactionDialogueOut: {
+    keyframes: [
+      { transform: 'translateY(0) scale(1)', opacity: 1 },
+      { transform: 'translateY(-5px) scale(.98)', opacity: 0 },
+    ],
+    options: { duration: 220, easing: 'ease-in', fill: 'forwards' },
+    timeoutMs: 480,
+  },
+  bossReactionReturn: {
+    keyframes: [
+      { transform: 'translate3d(var(--lb-boss-reaction-dx,0px),0,0) scale(var(--lb-boss-reaction-scale,1.14))', filter: 'brightness(1.08)' },
+      { transform: 'translate3d(calc(var(--lb-boss-reaction-dx,0px) * .12),0,0) scale(1.015)', filter: 'brightness(1.02)', offset: .82 },
+      { transform: 'translate3d(0,0,0) scale(1)', filter: 'brightness(1)' },
+    ],
+    options: { duration: 520, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' },
+    timeoutMs: 900,
+  },
+  bossReactionDefeat: {
+    keyframes: [
+      { transform: 'translate3d(var(--lb-boss-reaction-dx,0px),0,0) scale(var(--lb-boss-reaction-scale,1.14))', opacity: 1 },
+      { transform: 'translate3d(calc(var(--lb-boss-reaction-dx,0px) + 12px),4px,0) scale(1.08) rotate(2deg)', opacity: .9, offset: .5 },
+      { transform: 'translate3d(calc(var(--lb-boss-reaction-dx,0px) + 34px),8px,0) scale(.98) rotate(5deg)', opacity: .12 },
+    ],
+    options: { duration: 650, easing: 'cubic-bezier(.3,.65,.3,1)', fill: 'forwards' },
+    timeoutMs: 1050,
   },
 });
 
