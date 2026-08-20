@@ -7,14 +7,14 @@ export function normalizeBase(base: string): string {
 
 export function requestedEngine(search: string): LetterBayEngine {
   const value = new URLSearchParams(search).get('engine');
-  return value === 'v2' ? 'v2' : 'legacy';
+  return value === 'legacy' ? 'legacy' : 'v2';
 }
 
 export function resolveEngineTarget(search: string, base: string): string {
   const normalizedBase = normalizeBase(base);
-  return requestedEngine(search) === 'v2'
-    ? `${normalizedBase}v2/`
-    : `${normalizedBase}legacy/index.html?engine=legacy`;
+  return requestedEngine(search) === 'legacy'
+    ? `${normalizedBase}legacy/index.html?engine=legacy`
+    : `${normalizedBase}v2/`;
 }
 
 export function resolveV2CompatibilityTarget(base: string): string {
