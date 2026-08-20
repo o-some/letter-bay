@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   quality:
@@ -20,236 +20,46 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - id: apply
-        name: Apply staged boss-reaction bundle when present
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -euo pipefail
-          if compgen -G '.tmp/boss-reaction.part*' > /dev/null; then
-            cat .tmp/boss-reaction.part* | base64 -d > /tmp/boss-reaction-impl.tgz
-            tar -xzf /tmp/boss-reaction-impl.tgz -C .
-            test -s src/data/bossReactions.ts
-            test -s src/game/animationController.ts
-            test -s src/pages/v2/index.astro
-            test -s public/legacy/index.html
-            test -s tests/e2e/phase1-compat.spec.ts
-          fi
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
 
       - name: Pin npm 11 for deterministic dependency resolution
         run: |
           npm install --global npm@11.19.0
           npm --version
 
-      - id: lock
-        name: Ensure dependency lockfile exists
-        continue-on-error: true
-        run: |
-          if [ ! -f package-lock.json ]; then
-            npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-          fi
-
-      - id: install
-        name: Install reproducibly
-        continue-on-error: true
+      - name: Install reproducibly
         run: npm ci --no-audit --no-fund
 
-      - id: lint
-        name: Lint
-        continue-on-error: true
+      - name: Lint
         run: npm run lint
 
-      - id: typecheck
-        name: Typecheck
-        continue-on-error: true
-        shell: bash
-        run: npm run typecheck 2>&1 | tee /tmp/boss-reaction-typecheck.log
+      - name: Typecheck
+        run: npm run typecheck
 
-      - id: unit
-        name: Unit tests
-        continue-on-error: true
+      - name: Unit tests
         run: npm run test:unit
 
-      - id: integration
-        name: Integration tests
-        continue-on-error: true
+      - name: Integration tests
         run: npm run test:integration
 
-      - id: baseline
-        name: Legacy contract
-        continue-on-error: true
+      - name: Legacy contract
         run: npm run test:baseline
 
-      - id: build
-        name: Build
-        continue-on-error: true
+      - name: Build
         run: npm run build
 
-      - id: assets
-        name: Asset integrity
-        continue-on-error: true
+      - name: Asset integrity
         run: npm run test:assets
 
-      - id: browsers
-        name: Install browser engines
-        continue-on-error: true
+      - name: Install browser engines
         run: npx playwright install --with-deps chromium webkit
 
-      - id: e2e
-        name: E2E WebKit phones + Chromium + boss reaction + Boss 1 to Boss 2
-        continue-on-error: true
+      - name: E2E WebKit iPhone 393 + iPhone 430 + Chromium + Boss 1 to Boss 2
         run: npm run test:e2e
 
-      - name: Finalize verified boss-reaction implementation
-        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/feature/letter-bay-v2'
-        env:
-          APPLY: ${{ steps.apply.outcome }}
-          LOCK: ${{ steps.lock.outcome }}
-          INSTALL: ${{ steps.install.outcome }}
-          LINT: ${{ steps.lint.outcome }}
-          TYPECHECK: ${{ steps.typecheck.outcome }}
-          UNIT: ${{ steps.unit.outcome }}
-          INTEGRATION: ${{ steps.integration.outcome }}
-          BASELINE: ${{ steps.baseline.outcome }}
-          BUILD: ${{ steps.build.outcome }}
-          ASSETS: ${{ steps.assets.outcome }}
-          BROWSERS: ${{ steps.browsers.outcome }}
-          E2E: ${{ steps.e2e.outcome }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          failed=0
-          for result in "$APPLY" "$LOCK" "$INSTALL" "$LINT" "$TYPECHECK" "$UNIT" "$INTEGRATION" "$BASELINE" "$BUILD" "$ASSETS" "$BROWSERS" "$E2E"; do
-            if [ "$result" != "success" ]; then failed=1; fi
-          done
-          if [ "$failed" -ne 0 ]; then
-            echo 'Verification failed; staged implementation will not be committed.'
-            exit 0
-          fi
-
-          mkdir -p docs/ci
-          cat > docs/ci/boss-reaction-status.md <<EOF_STATUS
-          # Letter Bay V2 – Boss Reaction CI Status
-
-          Commit tested: \`${GITHUB_SHA}\` with staged boss-reaction bundle
-
-          | Gate | Outcome |
-          |---|---|
-          | staged bundle | ${APPLY} |
-          | lockfile | ${LOCK} |
-          | npm ci | ${INSTALL} |
-          | lint | ${LINT} |
-          | typecheck | ${TYPECHECK} |
-          | unit / reaction selector + animation fallback | ${UNIT} |
-          | integration / state-machine reaction parity | ${INTEGRATION} |
-          | legacy contract | ${BASELINE} |
-          | build | ${BUILD} |
-          | asset integrity | ${ASSETS} |
-          | browser install | ${BROWSERS} |
-          | E2E WebKit phones + Chromium + Boss 1 to Boss 2 | ${E2E} |
-
-          Verified before implementation commit by canonical CI.
-          EOF_STATUS
-
-          rm -rf .tmp
-          rm -f .github/workflows/apply-boss-reaction.yml
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git commit -m 'feat: add cinematic boss reaction after solved words'
-          git fetch origin feature/letter-bay-v2
-          git rebase origin/feature/letter-bay-v2
-          git push origin HEAD:feature/letter-bay-v2
-
-      - name: Record failed boss-reaction staging gate
-        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/feature/letter-bay-v2'
-        env:
-          APPLY: ${{ steps.apply.outcome }}
-          LOCK: ${{ steps.lock.outcome }}
-          INSTALL: ${{ steps.install.outcome }}
-          LINT: ${{ steps.lint.outcome }}
-          TYPECHECK: ${{ steps.typecheck.outcome }}
-          UNIT: ${{ steps.unit.outcome }}
-          INTEGRATION: ${{ steps.integration.outcome }}
-          BASELINE: ${{ steps.baseline.outcome }}
-          BUILD: ${{ steps.build.outcome }}
-          ASSETS: ${{ steps.assets.outcome }}
-          BROWSERS: ${{ steps.browsers.outcome }}
-          E2E: ${{ steps.e2e.outcome }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          failed=0
-          for result in "$APPLY" "$LOCK" "$INSTALL" "$LINT" "$TYPECHECK" "$UNIT" "$INTEGRATION" "$BASELINE" "$BUILD" "$ASSETS" "$BROWSERS" "$E2E"; do
-            if [ "$result" != "success" ]; then failed=1; fi
-          done
-          if [ "$failed" -eq 0 ]; then exit 0; fi
-
-          git reset --hard HEAD
-          git clean -fdx
-          mkdir -p docs/ci
-          cat > docs/ci/boss-reaction-staging-failure.md <<EOF_FAILURE
-          # Letter Bay V2 – Boss Reaction Staging Failure
-
-          Commit tested: \`${GITHUB_SHA}\`
-
-          | Gate | Outcome |
-          |---|---|
-          | staged bundle | ${APPLY} |
-          | lockfile | ${LOCK} |
-          | npm ci | ${INSTALL} |
-          | lint | ${LINT} |
-          | typecheck | ${TYPECHECK} |
-          | unit | ${UNIT} |
-          | integration | ${INTEGRATION} |
-          | legacy contract | ${BASELINE} |
-          | build | ${BUILD} |
-          | asset integrity | ${ASSETS} |
-          | browser install | ${BROWSERS} |
-          | E2E | ${E2E} |
-          EOF_FAILURE
-          {
-            echo
-            echo '## Typecheck output'
-            echo '```text'
-            tail -n 180 /tmp/boss-reaction-typecheck.log 2>/dev/null || true
-            echo '```'
-          } >> docs/ci/boss-reaction-staging-failure.md
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add docs/ci/boss-reaction-staging-failure.md
-          git commit -m 'test: record boss reaction staging failure' || exit 0
-          git fetch origin feature/letter-bay-v2
-          git rebase origin/feature/letter-bay-v2
-          git push origin HEAD:feature/letter-bay-v2
-
-      - name: Enforce boss-reaction quality gate
-        if: always()
-        env:
-          APPLY: ${{ steps.apply.outcome }}
-          LOCK: ${{ steps.lock.outcome }}
-          INSTALL: ${{ steps.install.outcome }}
-          LINT: ${{ steps.lint.outcome }}
-          TYPECHECK: ${{ steps.typecheck.outcome }}
-          UNIT: ${{ steps.unit.outcome }}
-          INTEGRATION: ${{ steps.integration.outcome }}
-          BASELINE: ${{ steps.baseline.outcome }}
-          BUILD: ${{ steps.build.outcome }}
-          ASSETS: ${{ steps.assets.outcome }}
-          BROWSERS: ${{ steps.browsers.outcome }}
-          E2E: ${{ steps.e2e.outcome }}
-        run: |
-          failed=0
-          for result in "$APPLY" "$LOCK" "$INSTALL" "$LINT" "$TYPECHECK" "$UNIT" "$INTEGRATION" "$BASELINE" "$BUILD" "$ASSETS" "$BROWSERS" "$E2E"; do
-            if [ "$result" != "success" ]; then failed=1; fi
-          done
-          if [ "$failed" -ne 0 ]; then
-            echo 'Boss reaction quality gate failed.' >&2
-            exit 1
-          fi
-          echo 'Boss reaction quality gate passed.'
+      - name: Boss reaction quality gate passed
+        run: echo 'Letter Bay V2 boss reaction quality gate passed.'
