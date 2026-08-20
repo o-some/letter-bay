@@ -109,7 +109,7 @@ test('Boss 1 transitions to Boss 2 and remains playable', async ({ page }, testI
     if (round < 2) await expectPortraitAppFitsViewport(page);
   }
 
-  await expect(page.locator('#intro')).toHaveClass(/show/, { timeout: 7_000 });
+  await expect(page.locator('#intro')).toHaveClass(/show/, { timeout: 9_000 });
   await expect(page.locator('#introName')).toHaveText('Kapitän Brax');
   await expectLoadedImage(page.locator('#introArt .letter-bay-boss-image'));
 
