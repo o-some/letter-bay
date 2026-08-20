@@ -1,0 +1,79 @@
+name: Apply Letter Bay boss reaction implementation
+
+on:
+  push:
+    branches: [feature/letter-bay-v2]
+    paths:
+      - '.github/workflows/apply-boss-reaction.yml'
+      - '.tmp/boss-reaction.part*'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply reviewed implementation bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .tmp/boss-reaction.part* | base64 -d > /tmp/boss-reaction-impl.tgz
+          tar -xzf /tmp/boss-reaction-impl.tgz -C .
+          test -s src/data/bossReactions.ts
+          test -s src/game/animationController.ts
+          test -s src/pages/v2/index.astro
+          test -s public/legacy/index.html
+          test -s tests/e2e/phase1-compat.spec.ts
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Pin npm
+        run: npm install --global npm@11.19.0
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Integration tests
+        run: npm run test:integration
+
+      - name: Legacy contract
+        run: npm run test:baseline
+
+      - name: Build
+        run: npm run build
+
+      - name: Asset integrity
+        run: npm run test:assets
+
+      - name: Install browsers
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: E2E WebKit iPhone + Chromium + Boss 1 to Boss 2
+        run: npm run test:e2e
+
+      - name: Commit verified implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .tmp
+          rm -f .github/workflows/apply-boss-reaction.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: add cinematic boss reaction after solved words'
+          git push
