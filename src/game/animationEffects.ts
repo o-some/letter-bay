@@ -25,6 +25,7 @@ export async function runAnimationEffect(
     case 'SHOW_BOSS_INTRO':
       return sequences.bossIntro(targets, signal);
 
+    case 'PLAY_BOSS_REACTION':
     case 'REQUEST_NEXT_WORD':
     case 'SHOW_LOSS':
     case 'LOG_ERROR':
