@@ -6,6 +6,7 @@ export type GameEvent =
   | { type: 'LETTER_GUESSED'; letter: string; correct: boolean; wordSolved: boolean }
   | { type: 'FULL_WORD_GUESSED'; correct: boolean }
   | { type: 'WORD_REWARD_RESOLVED' }
+  | { type: 'BOSS_REACTION_RESOLVED' }
   | { type: 'BOSS_HIT_RESOLVED' }
   | { type: 'BOSS_DEFEAT_RESOLVED' }
   | { type: 'HINT_USED' }
@@ -19,6 +20,7 @@ export type GameEvent =
 export type GameEffect =
   | { type: 'REQUEST_NEXT_WORD' }
   | { type: 'PLAY_FEEDBACK'; feedback: 'correct' | 'wrong' | 'word-solved' | 'boss-defeated' }
+  | { type: 'PLAY_BOSS_REACTION'; bossIndex: number; defeated: boolean }
   | { type: 'SHOW_BOSS_INTRO'; bossIndex: number }
   | { type: 'SHOW_LOSS' }
   | { type: 'LOG_ERROR'; message: string };
