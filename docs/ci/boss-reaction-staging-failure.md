@@ -1,6 +1,6 @@
 # Letter Bay V2 – Boss Reaction Staging Failure
 
-Commit tested: `109f3c2fc3a6969485142950618f228960d32878`
+Commit tested: `4dd05e760a14d46eed927d88eabe71115ee03bdb`
 
 | Gate | Outcome |
 |---|---|
@@ -9,13 +9,13 @@ Commit tested: `109f3c2fc3a6969485142950618f228960d32878`
 | npm ci | success |
 | lint | success |
 | typecheck | failure |
-| unit | success |
+| unit | failure |
 | integration | success |
 | legacy contract | success |
 | build | success |
 | asset integrity | success |
 | browser install | success |
-| E2E | success |
+| E2E | failure |
 
 ## Typecheck output
 ```text
@@ -23,8 +23,8 @@ Commit tested: `109f3c2fc3a6969485142950618f228960d32878`
 > letter-bay@2.0.0-alpha.1 typecheck
 > astro check
 
-[2m10:05:38[22m [34m[types][39m Generated [2m107ms[22m
-[2m10:05:38[22m [34m[check][39m Getting diagnostics for Astro files in /home/runner/work/letter-bay/letter-bay...
+[2m10:11:49[22m [34m[types][39m Generated [2m97ms[22m
+[2m10:11:49[22m [34m[check][39m Getting diagnostics for Astro files in /home/runner/work/letter-bay/letter-bay...
 [96msrc/game/animationEffects.ts[0m:[93m23[0m:[93m7[0m - [93mwarning[0m[90m ts(7027): [0mUnreachable code detected.
 
 [7m23[0m       return [];
@@ -53,8 +53,13 @@ Commit tested: `109f3c2fc3a6969485142950618f228960d32878`
 [7m177[0m     const advance = await play('bossReactionAdvance', input.boss);
 [7m   [0m [91m                               ~~~~~~~~~~~~~~~~~~~~~[0m
 
-Result (27 files): 
-- 5 errors
+[96mtests/integration/animationEffects.test.ts[0m:[93m15[0m:[93m5[0m - [91merror[0m[90m ts(2741): [0mProperty 'bossWordReaction' is missing in type '{ correctLetter: Mock<() => Promise<{ name: "celebrate"; outcome: "finished"; reducedMotion: boolean; elapsedMs: number; }[]>>; wrongLetter: Mock<() => Promise<{ name: "celebrate"; outcome: "finished"; reducedMotion: boolean; elapsedMs: number; }[]>>; wordSolved: Mock<...>; bossIntro: Mock<...>; bossDefeated: Mock<....' but required in type 'BattleAnimationSequences'.
+
+[7m15[0m     api: {
+[7m  [0m [91m    ~~~[0m
+
+Result (30 files): 
+- 6 errors
 - 0 warnings
 - 1 hint
 
