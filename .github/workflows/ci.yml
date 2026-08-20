@@ -13,6 +13,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: letter-bay-v2-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   quality:
     runs-on: ubuntu-latest
