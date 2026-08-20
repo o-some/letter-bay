@@ -9,8 +9,8 @@ export const featureFlags = Object.freeze({
   recoveryTraining: false,
   bayRestoration: false,
   audioPronunciation: false,
-  bossWordReaction: false,
-  bossReactionDialogue: false,
+  bossWordReaction: true,
+  bossReactionDialogue: true,
 });
 
 export type FeatureFlags = typeof featureFlags;
