@@ -34,6 +34,7 @@ import '../../styles/tokens.css';
 
       const firstBoss = `${base}assets/bosses/level-01-pirat-kai.png?v=v2-boss-reaction`;
       const legacySourceUrl = `${base}legacy/source.html?v=v2-boss-reaction`;
+      const oldAbsoluteBossPath = '/tulasisland/' + 'letter-bay/bosses/level-01-pirat-kai.webp';
       const reactionTail = "if(bhp<=0){shells+=12;hud();advanceTimer=setTimeout(bossDown,950)}else{advanceTimer=setTimeout(()=>nextWord(true),950)}}";
       const patchedReactionTail = "if(bhp<=0){shells+=12;hud();if(window.__lbBossReaction){window.__lbBossReaction({defeated:true,bossIndex:boss,bossName:B[boss][0]}).then(()=>bossDown(),()=>bossDown())}else{advanceTimer=setTimeout(bossDown,950)}}else{if(window.__lbBossReaction){window.__lbBossReaction({defeated:false,bossIndex:boss,bossName:B[boss][0]}).then(()=>nextWord(true),()=>nextWord(true))}else{advanceTimer=setTimeout(()=>nextWord(true),950)}}}";
 
@@ -49,7 +50,7 @@ import '../../styles/tokens.css';
 
         html = html
           .replace('<head>', `<head><base href="${base}"><link rel="stylesheet" href="${base}v2.css?v=v2-boss-reaction">`)
-          .replaceAll('/tulasisland/letter-bay/bosses/level-01-pirat-kai.webp', firstBoss)
+          .replaceAll(oldAbsoluteBossPath, firstBoss)
           .replaceAll('boss-sprite-dropbox-v2.webp', firstBoss)
           .replaceAll('boss-sprite-dropbox.webp', firstBoss)
           .replaceAll('boss-sprite.avif', firstBoss)
