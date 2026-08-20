@@ -4,6 +4,27 @@ Alle wesentlichen Änderungen an Letter Bay werden hier dokumentiert.
 
 ## [Unreleased] – Letter Bay V2
 
+### Cinematic Boss Word Reaction
+
+- nach vollständig richtig gelösten Wörtern eine hochwertige Boss-Reaktionssequenz im V2-Pfad eingeführt.
+- Boss bewegt sich per transform-basierter Animation zur Arenamitte, erhält Impact/Glow und kleine mobile-optimierte Partikel.
+- 22 wechselnde positive Bossreaktionen und 10 Kapitulationssätze ergänzt; direkte Satzwiederholung pro Boss/Reaktionstyp wird vermieden.
+- Dialog bleibt ungefähr 2,5 Sekunden sichtbar und kann nach einer Mindestanzeigezeit übersprungen werden.
+- überlebende Bosse morphen weich in die Kampfposition zurück; besiegte Bosse wechseln direkt in die Defeat-/Level-Transition.
+- expliziten `BOSS_REACTION`-State in die typisierte State Machine aufgenommen; währenddessen werden Lerninputs abgewiesen.
+- Reward-/HP-Verbuchung bleibt von der Animation getrennt und erfolgt exakt einmal.
+- 5-Sekunden-Hard-Timeout, `AbortSignal` und Fallback-Pfade gegen blockierte Animationen ergänzt.
+- Reduced-Motion-Variante ergänzt.
+- Safari/WebKit-Fix: zentrale Boss-Pose wird nach `animation.finished` zusätzlich als Inline-Transform persistiert, damit die Figur während des Dialogs nicht in die Ausgangsposition springt.
+- Input-Lock korrigiert: Ganzwort-Submit, Eingabefeld, Hinweis und Joker werden nach der Reaktion auf ihren vorherigen Disabled-State zurückgesetzt; das Spiel bleibt nach dem ersten richtigen Wort bedienbar.
+- V2-Bootstrap gehärtet: Bossbilder werden nach `document.write()` zuverlässig erneut synchronisiert, sodass Intro, Arena und Piratenflotten-Route echte PNG-Bilder zeigen.
+- Startbutton für iPhone gehärtet: deduplizierter `touchend`-/`click`-Pfad verhindert sowohl nicht reagierende Taps als auch Doppelstarts.
+- Bossreaktion und Dialog nach bestandenem Gate über `bossWordReaction: true` und `bossReactionDialogue: true` im V2-Pfad aktiviert; Legacy bleibt unberührt.
+- E2E-Test erweitert um echte WebKit-Taps bei Boss 1 und Boss 2, Reaktivierung des Submit-Buttons, sichtbare Bossbewegung, Rückkehr zur Ausgangsposition, Dialog-Pools, Scrollstabilität und Boss 1 → Boss 2.
+- Playwright-Projekte decken WebKit iPhone 393×852, WebKit iPhone 430×932 und Chromium Desktop 1440×900 ab.
+- vollständiger Quality-Gate-Lauf `32386778964` auf Commit `ab00b5024c76abfa6814249da1b934819dc80314` erfolgreich: npm ci, Lint, Typecheck, Unit, Integration, Legacy Contract, Build, Asset Integrity und alle E2E-Tests = `success`.
+- `main` und `backup/letter-bay-before-v2-20260819` unverändert gelassen; kein Merge durchgeführt.
+
 ### Mobile App Layout Refinement
 
 - Portrait-Mobile-Layout so verdichtet, dass die komplette Kampfoberfläche auf typischen iPhone-Viewports ohne vertikales Seitenscrollen sichtbar bleibt.
@@ -55,8 +76,8 @@ Alle wesentlichen Änderungen an Letter Bay werden hier dokumentiert.
 
 - Astro-7-Grundstruktur mit GitHub-Pages-Base `/letter-bay/` angelegt.
 - Legacy-Runtime unverändert unter `public/legacy/` gespiegelt.
-- sicherer Standard bleibt Legacy; `?engine=v2` nutzt bis zur kontrollierten Aktivierung ebenfalls den Legacy-Kompatibilitätsmodus.
-- alle V2-Feature-Flags standardmäßig deaktiviert.
+- sicherer Standard bleibt Legacy; `?engine=v2` nutzt den V2-Kompatibilitätspfad auf der bewährten Legacy-Gameplaybasis.
+- neue V2-Funktionen über Feature Flags abgesichert.
 - zehn individuelle Boss-PNGs und Tula-/Weltassets in `public/` gespiegelt.
 - Asset-Integritätsprüfung für PNG-Signatur, Dateigröße und Alpha-Kanal ergänzt.
 - Unit-Testbasis mit Vitest ergänzt.
