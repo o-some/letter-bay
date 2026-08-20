@@ -154,13 +154,29 @@ function createImpactParticles(arena: HTMLElement, boss: HTMLElement): void {
   }
 }
 
+type ReactionControl = HTMLInputElement | HTMLButtonElement;
+const reactionControlState = new Map<ReactionControl, boolean>();
+
 function lockReactionInputs(locked: boolean): void {
-  if (locked) document.body.dataset.lbGamePhase = 'BOSS_REACTION';
-  for (const selector of ['#answer', '#answerForm button', '#hint', '#joker']) {
-    const control = document.querySelector<HTMLInputElement | HTMLButtonElement>(selector);
-    if (control && locked) control.disabled = true;
+  const selectors = ['#answer', '#answerForm button', '#hint', '#joker'];
+
+  if (locked) {
+    document.body.dataset.lbGamePhase = 'BOSS_REACTION';
+    reactionControlState.clear();
+    for (const selector of selectors) {
+      const control = document.querySelector<ReactionControl>(selector);
+      if (!control) continue;
+      reactionControlState.set(control, control.disabled);
+      control.disabled = true;
+    }
+    return;
   }
-  if (!locked) delete document.body.dataset.lbGamePhase;
+
+  for (const [control, wasDisabled] of reactionControlState) {
+    if (control.isConnected) control.disabled = wasDisabled;
+  }
+  reactionControlState.clear();
+  delete document.body.dataset.lbGamePhase;
 }
 
 export function installBossReactionRuntime(options: BossReactionBrowserOptions): void {
