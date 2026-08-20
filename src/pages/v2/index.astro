@@ -37,6 +37,8 @@ import '../../styles/tokens.css';
       const oldAbsoluteBossPath = '/tulasisland/' + 'letter-bay/bosses/level-01-pirat-kai.webp';
       const reactionTail = "if(bhp<=0){shells+=12;hud();advanceTimer=setTimeout(bossDown,950)}else{advanceTimer=setTimeout(()=>nextWord(true),950)}}";
       const patchedReactionTail = "if(bhp<=0){shells+=12;hud();if(window.__lbBossReaction){window.__lbBossReaction({defeated:true,bossIndex:boss,bossName:B[boss][0]}).then(()=>bossDown(),()=>bossDown())}else{advanceTimer=setTimeout(bossDown,950)}}else{if(window.__lbBossReaction){window.__lbBossReaction({defeated:false,bossIndex:boss,bossName:B[boss][0]}).then(()=>nextWord(true),()=>nextWord(true))}else{advanceTimer=setTimeout(()=>nextWord(true),950)}}}";
+      const legacyStartListener = "$('#start').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();$('#intro').classList.remove('show');nextWord(false)});";
+      const hardenedStartListener = "(()=>{const s=$('#start');let lbStartBusy=false;const begin=e=>{e?.preventDefault?.();e?.stopPropagation?.();if(lbStartBusy)return;if($('#introLevel')?.textContent==='GESCHAFFT'){location.reload();return}lbStartBusy=true;$('#intro').classList.remove('show');nextWord(false);setTimeout(()=>{lbStartBusy=false},360)};s.addEventListener('touchend',begin,{passive:false});s.addEventListener('click',begin)})();";
 
       try {
         let html = await fetch(legacySourceUrl, { cache: 'no-store' }).then((response) => {
@@ -46,6 +48,9 @@ import '../../styles/tokens.css';
 
         if (!html.includes(reactionTail)) {
           throw new Error('Letter Bay V2 reaction patch target was not found');
+        }
+        if (!html.includes(legacyStartListener)) {
+          throw new Error('Letter Bay V2 start-button patch target was not found');
         }
 
         html = html
@@ -63,7 +68,11 @@ import '../../styles/tokens.css';
             `<div class="boss-art" id="introArt"><img class="letter-bay-boss-image" src="${firstBoss}" alt="Pirat Kai"></div>`,
           )
           .replace(reactionTail, patchedReactionTail)
-          .replace('</body>', '<script>window.__lbV2Ready?.();<\\/script></body>');
+          .replace(legacyStartListener, hardenedStartListener)
+          .replace(
+            '</body>',
+            `<script>(()=>{const ready=()=>window.__lbV2Ready?.();ready();requestAnimationFrame(ready);setTimeout(ready,80);setTimeout(ready,260)})();<\/script></body>`,
+          );
 
         document.open();
         document.write(html);
