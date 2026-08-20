@@ -46,7 +46,7 @@ describe('typed game effects map to semantic animation sequences', () => {
     await expect(runAnimationEffect({ type: 'REQUEST_NEXT_WORD' }, api, {})).resolves.toEqual([]);
     await expect(runAnimationEffect({ type: 'SHOW_LOSS' }, api, {})).resolves.toEqual([]);
     await expect(runAnimationEffect({ type: 'LOG_ERROR', message: 'test' }, api, {})).resolves.toEqual([]);
-    await expect(runAnimationEffect({ type: 'PLAY_BOSS_REACTION', defeated: false }, api, {})).resolves.toEqual([]);
+    await expect(runAnimationEffect({ type: 'PLAY_BOSS_REACTION', bossIndex: 0, defeated: false }, api, {})).resolves.toEqual([]);
     expect(calls).toEqual([]);
   });
 });
