@@ -18,11 +18,6 @@ function sequences(): { api: BattleAnimationSequences; calls: string[] } {
       wordSolved: vi.fn(async () => { calls.push('word'); return result(); }),
       bossIntro: vi.fn(async () => { calls.push('intro'); return result(); }),
       bossDefeated: vi.fn(async () => { calls.push('defeated'); return result(); }),
-      bossWordReaction: vi.fn(async () => ({
-        results: result(),
-        skipped: false,
-        reducedMotion: false,
-      })),
     },
   };
 }
@@ -41,7 +36,7 @@ describe('typed game effects map to semantic animation sequences', () => {
     expect(calls).toEqual(['correct', 'wrong', 'word', 'defeated', 'intro']);
   });
 
-  it('leaves non-animation effects untouched', async () => {
+  it('leaves dedicated boss-reaction and non-animation effects to their own runners', async () => {
     const { api, calls } = sequences();
     await expect(runAnimationEffect({ type: 'REQUEST_NEXT_WORD' }, api, {})).resolves.toEqual([]);
     await expect(runAnimationEffect({ type: 'SHOW_LOSS' }, api, {})).resolves.toEqual([]);
