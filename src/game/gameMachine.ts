@@ -156,13 +156,28 @@ export function transitionGameState(
       const bossDefeated = bossHp === 0;
       return result({
         ...state,
-        phase: 'BOSS_HIT',
+        phase: 'BOSS_REACTION',
         bossHp,
         wordsSolvedThisBoss: state.wordsSolvedThisBoss + 1,
         score: state.score + rules.wordBaseScore + state.tulaHp,
         shells: state.shells + rules.shellsPerWord + (bossDefeated ? rules.shellsPerBoss : 0),
-      }, true, [{ type: 'PLAY_FEEDBACK', feedback: 'word-solved' }]);
+      }, true, [{
+        type: 'PLAY_BOSS_REACTION',
+        bossIndex: state.bossIndex,
+        defeated: bossDefeated,
+      }]);
     }
+
+    case 'BOSS_REACTION_RESOLVED':
+      if (state.phase !== 'BOSS_REACTION') return result({ ...state }, false);
+      if (state.bossHp === 0) {
+        return result(
+          { ...state, phase: 'BOSS_DEFEATED' },
+          true,
+          [{ type: 'PLAY_FEEDBACK', feedback: 'boss-defeated' }],
+        );
+      }
+      return result({ ...state, phase: 'BOSS_HIT' }, true);
 
     case 'BOSS_HIT_RESOLVED':
       if (state.phase !== 'BOSS_HIT') return result({ ...state }, false);
