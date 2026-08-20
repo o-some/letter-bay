@@ -155,7 +155,7 @@ function createImpactParticles(arena: HTMLElement, boss: HTMLElement): void {
 }
 
 function lockReactionInputs(locked: boolean): void {
-  document.body.dataset.lbGamePhase = locked ? 'BOSS_REACTION' : '';
+  if (locked) document.body.dataset.lbGamePhase = 'BOSS_REACTION';
   for (const selector of ['#answer', '#answerForm button', '#hint', '#joker']) {
     const control = document.querySelector<HTMLInputElement | HTMLButtonElement>(selector);
     if (control && locked) control.disabled = true;
@@ -198,6 +198,7 @@ export function installBossReactionRuntime(options: BossReactionBrowserOptions):
     const dialogue = ensureDialogue(arena);
     const reaction = selector.select(request.bossIndex, request.defeated ? 'defeated' : 'normal');
     setDialogue(dialogue, request.bossName, reaction.text, options.dialogueEnabled);
+    arena.dataset.reactionActive = 'true';
     lockReactionInputs(true);
     createImpactParticles(arena, boss);
 
@@ -210,6 +211,7 @@ export function installBossReactionRuntime(options: BossReactionBrowserOptions):
       }, { controller });
     } finally {
       lockReactionInputs(false);
+      delete arena.dataset.reactionActive;
       dialogue.hidden = true;
       reactionRunning = false;
     }
