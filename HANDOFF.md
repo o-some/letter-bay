@@ -15,10 +15,12 @@ Sprachlern-Minispiel für Tula’s Island. Wörter werden gegen eine Piratenflot
 - Phase 1 – Testnetz und Kompatibilität: **PASS**
 - Phase 2 – State Machine: **PASS**
 - Phase 3 – Animationsfundament: **PASS**
+- Mobile One-Screen Layout Refinement: **PASS**
 - Nächste Phase: **Phase 4 – Lernkarte und Meisteraufgaben**
 - Phase-1-Validierung: GitHub Actions `32307481759` = `success`
 - Phase-2-Validierung: GitHub Actions `32308257027` = `success`
 - Phase-3-Validierung: GitHub Actions `32309129223` = `success`
+- Mobile-Layout-Validierung: Commit `da5f34209da29bafd0b1f9f88f372f51e7965b7b` = alle CI-Gates `success`
 - `main` darf während der V2-Entwicklung nicht direkt beschrieben werden.
 - Kein Merge ohne ausdrückliche Freigabe.
 
@@ -86,7 +88,37 @@ Eigenschaften:
 - Animationen verändern den Game State nicht eigenständig,
 - semantische Sequenzen für richtigen/falschen Buchstaben, Wortlösung, Bossintro und Boss-Sieg.
 
-`enhancedAnimations` bleibt weiterhin `false`. Die Legacy-Oberfläche bleibt unverändert, bis der echte V2-Pfad kontrolliert aktiviert wird.
+`enhancedAnimations` bleibt weiterhin `false`. Die Legacy-Oberfläche bleibt als funktionaler Fallback erhalten, bis der echte V2-Pfad kontrolliert aktiviert wird.
+
+## Mobile One-Screen Layout
+
+Die portrait-mobile Legacy-Kompatibilitätsansicht wurde als sichere Designverfeinerung kompakter gemacht, ohne Gameplay-Funktionen zu entfernen.
+
+Zielbereich:
+
+```text
+max-width: 760px
+min-height: 620px
+max-height: 1000px
+```
+
+Dort gilt:
+
+- die App nutzt `100dvh` und Safe-Area-Padding,
+- vertikales Seitenscrollen ist deaktiviert,
+- Header, Titel, HP, Arena, Puzzle, Tastatur, Tools und Piratenflotte liegen in einem festen vertikalen Grid,
+- vertikale Abstände und Höhen wurden ungefähr 10–15 % reduziert,
+- Wort und Tastatur bleiben lesbar,
+- Piratenflotte bleibt als kompakte horizontale Leiste sichtbar,
+- extrem kurze beziehungsweise Landschafts-Viewports behalten bewusst die scrollbare Fallback-Darstellung, damit keine Controls abgeschnitten werden.
+
+Automatischer WebKit-Test prüft für den iPhone-Viewport:
+
+- `scrollY <= 1`,
+- `scrollHeight <= innerHeight + 2`,
+- `.wrap` endet innerhalb des Viewports,
+- `.route` endet innerhalb des Viewports,
+- die Bedingung bleibt auch nach neuen Wörtern und beim Boss-1-zu-Boss-2-Wechsel erfüllt.
 
 ## Teststatus
 
@@ -107,6 +139,7 @@ Alle verpflichtenden Gates sind grün:
 - Boss 1 -> Boss 2
 - Bossbilder in Intro, Route und Arena
 - Scroll-Clamp
+- One-Screen-Mobile-Layout ohne vertikales Seitenscrollen
 
 Details:
 
@@ -125,6 +158,7 @@ Details:
 5. Nach Bossstart muss die Ansicht oben am Spiel stehen.
 6. Bossgrafik muss in Intro, Arena und Route sichtbar sein.
 7. Kein wachsender Leerraum / unkontrolliertes Scrollen nach neuen Wörtern.
+8. Portrait-iPhone: vollständige Kampfoberfläche bleibt ohne vertikales Seitenscrollen sichtbar.
 
 ## Phase 4 – verbindlicher nächster Schritt
 
@@ -149,7 +183,7 @@ Pflicht:
 - Kein Force-Push.
 - Keine funktionierende Funktion ohne bestandenen Ersatztest entfernen.
 - Mobile und Bosswechsel nach Änderungen testen.
-- `HANDOFF.md` und `CHANGELOG.md` nach jeder Phase aktualisieren.
+- `HANDOFF.md` und `CHANGELOG.md` nach jeder Phase bzw. relevanten Design-Regression aktualisieren.
 
 ## Do not touch
 Die alte Kopie in `o-some/tulasisland` nicht löschen. `main` und `backup/letter-bay-before-v2-20260819` nicht verändern, solange keine separate Freigabe vorliegt.
