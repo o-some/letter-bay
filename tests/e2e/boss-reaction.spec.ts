@@ -33,7 +33,7 @@ async function expectBossLoaded(page: import('@playwright/test').Page) {
 
 test('solved word moves the boss center, speaks, returns and keeps the app viewport stable', async ({ page }) => {
   const clues = legacyClueMap();
-  await page.goto('/letter-bay/v2/?bossReaction=1');
+  await page.goto('/letter-bay/?engine=v2');
   await expect(page.locator('#introName')).toHaveText('Pirat Kai');
   await page.locator('#start').click();
   await expectBossLoaded(page);
@@ -71,6 +71,7 @@ test('solved word moves the boss center, speaks, returns and keeps the app viewp
 
   await expect(dialogue).toBeHidden({ timeout: 6_000 });
   await expect(page.locator('#answer')).toBeEnabled({ timeout: 6_000 });
+  await expect(page.locator('#answerForm button[type="submit"]')).toBeEnabled({ timeout: 6_000 });
   await expect(page.locator('body')).not.toHaveAttribute('data-lb-game-phase', 'BOSS_REACTION');
   await expectBossLoaded(page);
 
@@ -89,7 +90,7 @@ test('solved word moves the boss center, speaks, returns and keeps the app viewp
 
 test('third solved word uses a defeat line and reaches Boss 2 without a hanging transition', async ({ page }) => {
   const clues = legacyClueMap();
-  await page.goto('/letter-bay/v2/?bossReaction=1');
+  await page.goto('/letter-bay/?engine=v2');
   await page.locator('#start').click();
 
   for (let round = 0; round < 3; round += 1) {
@@ -98,10 +99,13 @@ test('third solved word uses a defeat line and reaches Boss 2 without a hanging 
     await expect(dialogue).toBeVisible({ timeout: 4_000 });
     const quote = (await dialogue.locator('.lb-boss-reaction-quote').textContent())?.replace(/[„“]/g, '') ?? '';
     if (round === 2) expect(reactionData.defeated).toContain(quote);
-    if (round < 2) await expect(page.locator('#answer')).toBeEnabled({ timeout: 6_000 });
+    if (round < 2) {
+      await expect(page.locator('#answer')).toBeEnabled({ timeout: 6_000 });
+      await expect(page.locator('#answerForm button[type="submit"]')).toBeEnabled({ timeout: 6_000 });
+    }
   }
 
-  await expect(page.locator('#intro')).toHaveClass(/show/, { timeout: 8_000 });
+  await expect(page.locator('#intro')).toHaveClass(/show/, { timeout: 9_000 });
   await expect(page.locator('#introName')).toHaveText('Kapitän Brax');
   await expect.poll(() => page.locator('#introArt .letter-bay-boss-image').evaluate((image) =>
     image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
