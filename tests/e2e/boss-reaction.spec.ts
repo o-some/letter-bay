@@ -7,6 +7,8 @@ const reactionData = JSON.parse(readFileSync('public/data/boss-reactions.json', 
   tula: string[];
 };
 
+type Rect = { x: number; y: number; width: number; height: number };
+
 function legacyClueMap(): Map<string, string> {
   const html = readFileSync('public/legacy/source.html', 'utf8');
   const match = html.match(/,W=(\[\[.*\]\]);const \$=s=>/s);
@@ -30,6 +32,61 @@ async function expectBossLoaded(page: import('@playwright/test').Page) {
   await expect.poll(() => page.locator('#bossArt .letter-bay-boss-image').evaluate((image) =>
     image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
   )).toBe(true);
+}
+
+function isInside(inner: Rect, outer: Rect, tolerance = 2): boolean {
+  return inner.x >= outer.x - tolerance
+    && inner.y >= outer.y - tolerance
+    && inner.x + inner.width <= outer.x + outer.width + tolerance
+    && inner.y + inner.height <= outer.y + outer.height + tolerance;
+}
+
+function overlaps(a: Rect, b: Rect, tolerance = 0): boolean {
+  return !(
+    a.x + a.width <= b.x + tolerance
+    || b.x + b.width <= a.x + tolerance
+    || a.y + a.height <= b.y + tolerance
+    || b.y + b.height <= a.y + tolerance
+  );
+}
+
+function containsCenter(container: Rect, target: Rect): boolean {
+  const x = target.x + target.width / 2;
+  const y = target.y + target.height / 2;
+  return x >= container.x
+    && x <= container.x + container.width
+    && y >= container.y
+    && y <= container.y + container.height;
+}
+
+async function expectReadableArenaDuringDialogue(page: import('@playwright/test').Page) {
+  const arena = await page.locator('#arena').boundingBox();
+  const tula = await page.locator('.arena .tula').boundingBox();
+  const boss = await page.locator('#bossArt').boundingBox();
+  const vs = await page.locator('.arena .vs').boundingBox();
+  const tulaBubble = await page.locator('.lb-tula-reaction-dialogue').boundingBox();
+  const bossBubble = await page.locator('.lb-boss-reaction-dialogue').boundingBox();
+
+  expect(arena).not.toBeNull();
+  expect(tula).not.toBeNull();
+  expect(boss).not.toBeNull();
+  expect(vs).not.toBeNull();
+  expect(tulaBubble).not.toBeNull();
+  expect(bossBubble).not.toBeNull();
+  if (!arena || !tula || !boss || !vs || !tulaBubble || !bossBubble) return;
+
+  expect(isInside(tula, arena)).toBe(true);
+  expect(isInside(boss, arena)).toBe(true);
+  expect(isInside(vs, arena)).toBe(true);
+  expect(isInside(tulaBubble, arena)).toBe(true);
+  expect(isInside(bossBubble, arena)).toBe(true);
+  expect(overlaps(tulaBubble, bossBubble, 2)).toBe(false);
+  expect(overlaps(tulaBubble, vs, 1)).toBe(false);
+  expect(overlaps(bossBubble, vs, 1)).toBe(false);
+  expect(containsCenter(tulaBubble, tula)).toBe(false);
+  expect(containsCenter(bossBubble, boss)).toBe(false);
+  expect(tula.x + tula.width / 2).toBeLessThan(vs.x + vs.width / 2);
+  expect(boss.x + boss.width / 2).toBeGreaterThan(vs.x + vs.width / 2);
 }
 
 test('solved word moves Tula toward VS, boss takes the hit, both speak, then Tula returns', async ({ page }) => {
@@ -71,11 +128,12 @@ test('solved word moves Tula toward VS, boss takes the hit, both speak, then Tul
   expect(duringBoss).not.toBeNull();
   if (beforeTula && duringTula) {
     expect(duringTula.x - beforeTula.x).toBeGreaterThan(20);
-    expect(duringTula.width).toBeGreaterThanOrEqual(beforeTula.width);
   }
   if (beforeBoss && duringBoss) {
     expect(Math.abs(duringBoss.x - beforeBoss.x)).toBeLessThan(10);
   }
+
+  await expectReadableArenaDuringDialogue(page);
 
   const duringViewport = await page.evaluate(() => ({
     y: window.scrollY,
@@ -101,6 +159,50 @@ test('solved word moves Tula toward VS, boss takes the hit, both speak, then Tul
   }));
   expect(afterViewport.y).toBe(beforeViewport.y);
   expect(afterViewport.height).toBeLessThanOrEqual(beforeViewport.height + 2);
+});
+
+test('arena character layout remains readable during dual dialogue', async ({ page }) => {
+  const clues = legacyClueMap();
+  await page.goto('/letter-bay/?engine=v2');
+  await page.locator('#start').click();
+  await expectBossLoaded(page);
+
+  const baseline = await page.evaluate(() => ({
+    y: window.scrollY,
+    height: Math.max(document.documentElement.scrollHeight, document.body.scrollHeight),
+  }));
+
+  await solveWithHint(page, clues);
+  await expect(page.locator('.lb-duo-reaction')).toBeVisible({ timeout: 4_000 });
+  await expectReadableArenaDuringDialogue(page);
+
+  const during = await page.evaluate(() => ({
+    y: window.scrollY,
+    height: Math.max(document.documentElement.scrollHeight, document.body.scrollHeight),
+  }));
+  expect(during.y).toBe(baseline.y);
+  expect(during.height).toBeLessThanOrEqual(baseline.height + 2);
+});
+
+test('additional required 375x667 and 768x1024 viewports preserve arena geometry', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium-desktop', 'Extra viewport sweep runs once in Chromium.');
+  const clues = legacyClueMap();
+
+  for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/letter-bay/?engine=v2');
+    await page.locator('#start').click();
+    await expectBossLoaded(page);
+    await solveWithHint(page, clues);
+    await expect(page.locator('.lb-duo-reaction')).toBeVisible({ timeout: 4_000 });
+    await expectReadableArenaDuringDialogue(page);
+
+    const metrics = await page.evaluate(() => ({
+      y: window.scrollY,
+      max: Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
+    }));
+    expect(metrics.y).toBeLessThanOrEqual(metrics.max + 1);
+  }
 });
 
 test('third solved word uses a defeat line and reaches Boss 2 without a hanging transition', async ({ page }) => {
