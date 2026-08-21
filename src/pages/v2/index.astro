@@ -21,6 +21,7 @@ import '../../styles/tokens.css';
     <script>
       import { featureFlags } from '../../game/featureFlags';
       import { installBossReactionRuntime } from '../../game/bossReactionBrowser';
+      import { installArenaMomentumRuntime } from '../../game/arenaMomentumRuntime';
 
       const base = import.meta.env.BASE_URL.endsWith('/')
         ? import.meta.env.BASE_URL
@@ -29,14 +30,22 @@ import '../../styles/tokens.css';
       const forcedReaction = params.get('bossReaction') === '1';
       const reactionEnabled = featureFlags.bossWordReaction || forcedReaction;
       const dialogueEnabled = featureFlags.bossReactionDialogue || forcedReaction;
+      const arenaMomentumEnabled = params.get('arenaMomentum') !== '0';
 
       installBossReactionRuntime({ baseUrl: base, enabled: reactionEnabled, dialogueEnabled });
+      installArenaMomentumRuntime({ enabled: arenaMomentumEnabled });
 
-      const firstBoss = `${base}assets/bosses/level-01-pirat-kai.png?v=v2-boss-reaction`;
-      const legacySourceUrl = `${base}legacy/source.html?v=v2-boss-reaction`;
+      const firstBoss = `${base}assets/bosses/level-01-pirat-kai.png?v=v2-arena-momentum`;
+      const legacySourceUrl = `${base}legacy/source.html?v=v2-arena-momentum`;
       const oldAbsoluteBossPath = '/tulasisland/' + 'letter-bay/bosses/level-01-pirat-kai.webp';
       const reactionTail = "if(bhp<=0){shells+=12;hud();advanceTimer=setTimeout(bossDown,950)}else{advanceTimer=setTimeout(()=>nextWord(true),950)}}";
-      const patchedReactionTail = "if(bhp<=0){shells+=12;hud();if(window.__lbBossReaction){window.__lbBossReaction({defeated:true,bossIndex:boss,bossName:B[boss][0]}).then(()=>bossDown(),()=>bossDown())}else{advanceTimer=setTimeout(bossDown,950)}}else{if(window.__lbBossReaction){window.__lbBossReaction({defeated:false,bossIndex:boss,bossName:B[boss][0]}).then(()=>nextWord(true),()=>nextWord(true))}else{advanceTimer=setTimeout(()=>nextWord(true),950)}}}";
+      const patchedReactionTail = "if(bhp<=0){shells+=12;hud();window.__lbArenaSolved?.({defeated:true});if(window.__lbBossReaction){window.__lbBossReaction({defeated:true,bossIndex:boss,bossName:B[boss][0]}).then(()=>bossDown(),()=>bossDown())}else{advanceTimer=setTimeout(bossDown,950)}}else{window.__lbArenaSolved?.({defeated:false});if(window.__lbBossReaction){window.__lbBossReaction({defeated:false,bossIndex:boss,bossName:B[boss][0]}).then(()=>nextWord(true),()=>nextWord(true))}else{advanceTimer=setTimeout(()=>nextWord(true),950)}}}";
+      const nextWordTail = "draw();hud();if(preserve)clampScroll(y)}function draw";
+      const patchedNextWordTail = "draw();hud();window.__lbArenaTurn?.({bossIndex:boss,bossName:B[boss][0],bossHp:bhp});if(preserve)clampScroll(y)}function draw";
+      const wrongLetterTail = "pulse('hit-tula')}btn.disabled=true;draw();hud();";
+      const patchedWrongLetterTail = "pulse('hit-tula');window.__lbArenaMistake?.({kind:'letter'})}btn.disabled=true;draw();hud();";
+      const wrongWordTail = "$('#msg').textContent='Noch nicht richtig – Tula verliert Kraft.';pulse('hit-tula');hud();";
+      const patchedWrongWordTail = "$('#msg').textContent='Noch nicht richtig – Tula verliert Kraft.';pulse('hit-tula');window.__lbArenaMistake?.({kind:'word'});hud();";
       const legacyStartListener = "$('#start').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();$('#intro').classList.remove('show');nextWord(false)});";
       const hardenedStartListener = "(()=>{const s=$('#start');let lbStartBusy=false;const begin=e=>{e?.preventDefault?.();e?.stopPropagation?.();if(lbStartBusy)return;if($('#introLevel')?.textContent==='GESCHAFFT'){location.reload();return}lbStartBusy=true;$('#intro').classList.remove('show');nextWord(false);setTimeout(()=>{lbStartBusy=false},360)};s.addEventListener('touchend',begin,{passive:false});s.addEventListener('click',begin)})();";
 
@@ -46,15 +55,20 @@ import '../../styles/tokens.css';
           return response.text();
         });
 
-        if (!html.includes(reactionTail)) {
-          throw new Error('Letter Bay V2 reaction patch target was not found');
-        }
-        if (!html.includes(legacyStartListener)) {
-          throw new Error('Letter Bay V2 start-button patch target was not found');
+        for (const [target, label] of [
+          [reactionTail, 'reaction'],
+          [nextWordTail, 'next-word'],
+          [wrongLetterTail, 'wrong-letter'],
+          [wrongWordTail, 'wrong-word'],
+          [legacyStartListener, 'start-button'],
+        ] as const) {
+          if (!html.includes(target)) {
+            throw new Error(`Letter Bay V2 ${label} patch target was not found`);
+          }
         }
 
         html = html
-          .replace('<head>', `<head><base href="${base}"><link rel="stylesheet" href="${base}v2.css?v=v2-boss-reaction">`)
+          .replace('<head>', `<head><base href="${base}"><link rel="stylesheet" href="${base}v2.css?v=v2-arena-momentum"><link rel="stylesheet" href="${base}arena-momentum.css?v=v2-arena-momentum">`)
           .replaceAll(oldAbsoluteBossPath, firstBoss)
           .replaceAll('boss-sprite-dropbox-v2.webp', firstBoss)
           .replaceAll('boss-sprite-dropbox.webp', firstBoss)
@@ -68,10 +82,13 @@ import '../../styles/tokens.css';
             `<div class="boss-art" id="introArt"><img class="letter-bay-boss-image" src="${firstBoss}" alt="Pirat Kai"></div>`,
           )
           .replace(reactionTail, patchedReactionTail)
+          .replace(nextWordTail, patchedNextWordTail)
+          .replace(wrongLetterTail, patchedWrongLetterTail)
+          .replace(wrongWordTail, patchedWrongWordTail)
           .replace(legacyStartListener, hardenedStartListener)
           .replace(
             '</body>',
-            `<script>(()=>{const ready=()=>window.__lbV2Ready?.();ready();requestAnimationFrame(ready);setTimeout(ready,80);setTimeout(ready,260)})();<\/script></body>`,
+            `<script>(()=>{const ready=()=>{window.__lbV2Ready?.();window.__lbArenaPrepare?.()};ready();requestAnimationFrame(ready);setTimeout(ready,80);setTimeout(ready,260)})();<\/script></body>`,
           );
 
         document.open();

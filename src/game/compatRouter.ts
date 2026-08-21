@@ -10,11 +10,19 @@ export function requestedEngine(search: string): LetterBayEngine {
   return value === 'legacy' ? 'legacy' : 'v2';
 }
 
+function forwardedV2Search(search: string): string {
+  const params = new URLSearchParams(search);
+  params.delete('engine');
+  const value = params.toString();
+  return value ? `?${value}` : '';
+}
+
 export function resolveEngineTarget(search: string, base: string): string {
   const normalizedBase = normalizeBase(base);
-  return requestedEngine(search) === 'legacy'
-    ? `${normalizedBase}legacy/index.html?engine=legacy`
-    : `${normalizedBase}v2/`;
+  if (requestedEngine(search) === 'legacy') {
+    return `${normalizedBase}legacy/index.html?engine=legacy`;
+  }
+  return `${normalizedBase}v2/${forwardedV2Search(search)}`;
 }
 
 export function resolveV2CompatibilityTarget(base: string): string {
