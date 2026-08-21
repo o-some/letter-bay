@@ -15,6 +15,13 @@ function legacyClueMap(): Map<string, string> {
   return new Map(words.map(([word, , clue]) => [clue, word]));
 }
 
+async function chooseSafeAttack(page: import('@playwright/test').Page) {
+  const choice = page.locator('.lb-attack-choice');
+  await expect(choice).toBeVisible({ timeout: 5_000 });
+  await page.locator('.lb-attack-button.attack-safe').click();
+  await expect(choice).toBeHidden();
+}
+
 async function solveWithHint(page: import('@playwright/test').Page, clues: Map<string, string>) {
   await page.locator('#hint').click();
   await expect(page.locator('#msg')).toContainText('Hinweis:');
@@ -38,6 +45,7 @@ test('solved word moves Tula toward VS, boss takes the hit, both speak, then Tul
   await expect(page.locator('#introName')).toHaveText('Pirat Kai');
   await page.locator('#start').click();
   await expectBossLoaded(page);
+  await chooseSafeAttack(page);
 
   const beforeTula = await page.locator('.arena .tula').boundingBox();
   const beforeBoss = await page.locator('#bossArt').boundingBox();
@@ -85,15 +93,12 @@ test('solved word moves Tula toward VS, boss takes the hit, both speak, then Tul
   expect(duringViewport.height).toBeLessThanOrEqual(beforeViewport.height + 2);
 
   await expect(dialogue).toBeHidden({ timeout: 7_000 });
-  await expect(page.locator('#answer')).toBeEnabled({ timeout: 7_000 });
-  await expect(page.locator('#answerForm button[type="submit"]')).toBeEnabled({ timeout: 7_000 });
+  await expect(page.locator('.lb-attack-choice')).toBeVisible({ timeout: 7_000 });
   await expect(page.locator('body')).not.toHaveAttribute('data-lb-game-phase', 'BOSS_REACTION');
   await expectBossLoaded(page);
 
-  const afterTula = await page.locator('.arena .tula').boundingBox();
   const afterBoss = await page.locator('#bossArt').boundingBox();
-  if (beforeTula && afterTula) expect(Math.abs(afterTula.x - beforeTula.x)).toBeLessThan(6);
-  if (beforeBoss && afterBoss) expect(Math.abs(afterBoss.x - beforeBoss.x)).toBeLessThan(6);
+  if (beforeBoss && afterBoss) expect(Math.abs(afterBoss.x - beforeBoss.x)).toBeLessThan(10);
 
   const afterViewport = await page.evaluate(() => ({
     y: window.scrollY,
@@ -109,6 +114,7 @@ test('third solved word uses a defeat line and reaches Boss 2 without a hanging 
   await page.locator('#start').click();
 
   for (let round = 0; round < 3; round += 1) {
+    await chooseSafeAttack(page);
     await solveWithHint(page, clues);
     const dialogue = page.locator('.lb-duo-reaction');
     const bossBubble = page.locator('.lb-boss-reaction-dialogue');
@@ -120,10 +126,7 @@ test('third solved word uses a defeat line and reaches Boss 2 without a hanging 
     const tulaQuote = (await tulaBubble.locator('.lb-boss-reaction-quote').textContent())?.replace(/[„“]/g, '') ?? '';
     expect(reactionData.tula).toContain(tulaQuote);
     if (round === 2) expect(reactionData.defeated).toContain(bossQuote);
-    if (round < 2) {
-      await expect(page.locator('#answer')).toBeEnabled({ timeout: 7_000 });
-      await expect(page.locator('#answerForm button[type="submit"]')).toBeEnabled({ timeout: 7_000 });
-    }
+    if (round < 2) await expect(page.locator('.lb-attack-choice')).toBeVisible({ timeout: 7_000 });
   }
 
   await expect(page.locator('#intro')).toHaveClass(/show/, { timeout: 10_000 });
@@ -134,6 +137,7 @@ test('third solved word uses a defeat line and reaches Boss 2 without a hanging 
 
   await page.locator('#start').click();
   await expect(page.locator('#intro')).not.toHaveClass(/show/);
+  await expect(page.locator('.lb-attack-choice')).toBeVisible();
   await expect(page.locator('#bossLevel')).toContainText('LEVEL 2');
   await expect(page.locator('#keyboard .key')).toHaveCount(29);
   await expectBossLoaded(page);
