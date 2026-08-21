@@ -14,6 +14,7 @@ export interface BossReactionSequenceResult {
 
 export interface BossReactionSequenceInput {
   boss: HTMLElement;
+  tula: HTMLElement;
   arena: HTMLElement;
   dialogue: HTMLElement;
   defeated: boolean;
@@ -41,10 +42,10 @@ function defaultReducedMotion(): boolean {
 }
 
 function visualScale(viewportWidth: number, reducedMotion: boolean): number {
-  if (reducedMotion) return 1.04;
-  if (viewportWidth < 380) return 1.10;
-  if (viewportWidth <= 760) return 1.14;
-  return 1.18;
+  if (reducedMotion) return 1.025;
+  if (viewportWidth < 380) return 1.08;
+  if (viewportWidth <= 760) return 1.10;
+  return 1.12;
 }
 
 function outcomeToStatus(outcome: AnimationOutcome): BossReactionStatus | null {
@@ -111,6 +112,14 @@ async function defaultHold(
   });
 }
 
+function firstBlockingStatus(results: AnimationRunResult[]): BossReactionStatus | null {
+  for (const result of results) {
+    const status = outcomeToStatus(result.outcome);
+    if (status) return status;
+  }
+  return null;
+}
+
 export async function playBossWordReaction(
   input: BossReactionSequenceInput,
   options: BossReactionSequenceOptions = {},
@@ -118,7 +127,7 @@ export async function playBossWordReaction(
   const controller = options.controller ?? new AnimationController();
   const holdMs = options.holdMs ?? 2500;
   const minSkipMs = options.minSkipMs ?? 650;
-  const hardTimeoutMs = options.hardTimeoutMs ?? 5000;
+  const hardTimeoutMs = options.hardTimeoutMs ?? 5500;
   const now = options.now ?? (() => globalThis.performance?.now?.() ?? Date.now());
   const prefersReducedMotion = options.prefersReducedMotion ?? defaultReducedMotion;
   const hold = options.hold ?? defaultHold;
@@ -146,52 +155,52 @@ export async function playBossWordReaction(
   const cleanup = () => {
     input.dialogue.hidden = true;
     input.dialogue.removeAttribute('data-visible');
-    input.boss.style.removeProperty('transform');
-    input.boss.style.removeProperty('filter');
-    input.boss.style.removeProperty('--lb-boss-reaction-dx');
-    input.boss.style.removeProperty('--lb-boss-reaction-scale');
-    input.boss.style.removeProperty('--lb-boss-reaction-overshoot');
+    input.tula.style.removeProperty('transform');
+    input.tula.style.removeProperty('filter');
+    input.tula.style.removeProperty('--lb-boss-reaction-dx');
+    input.tula.style.removeProperty('--lb-boss-reaction-scale');
+    input.tula.style.removeProperty('--lb-boss-reaction-overshoot');
   };
 
   try {
-    const bossRect = input.boss.getBoundingClientRect();
+    const tulaRect = input.tula.getBoundingClientRect();
     const arenaRect = input.arena.getBoundingClientRect();
     const viewportWidth = typeof window === 'undefined' ? arenaRect.width : window.innerWidth;
     const scale = visualScale(viewportWidth, reducedMotion);
-    const targetCenterX = arenaRect.left + arenaRect.width * .59;
-    const bossCenterX = bossRect.left + bossRect.width / 2;
-    const dx = reducedMotion ? 0 : targetCenterX - bossCenterX;
+    const targetCenterX = arenaRect.left + arenaRect.width * .43;
+    const tulaCenterX = tulaRect.left + tulaRect.width / 2;
+    const dx = reducedMotion ? 0 : Math.max(0, targetCenterX - tulaCenterX);
 
-    input.boss.style.setProperty('--lb-boss-reaction-dx', `${dx.toFixed(2)}px`);
-    input.boss.style.setProperty('--lb-boss-reaction-scale', scale.toFixed(3));
-    input.boss.style.setProperty('--lb-boss-reaction-overshoot', (scale + (reducedMotion ? 0 : .03)).toFixed(3));
+    input.tula.style.setProperty('--lb-boss-reaction-dx', `${dx.toFixed(2)}px`);
+    input.tula.style.setProperty('--lb-boss-reaction-scale', scale.toFixed(3));
+    input.tula.style.setProperty('--lb-boss-reaction-overshoot', (scale + (reducedMotion ? 0 : .025)).toFixed(3));
 
-    const play = async (name: Parameters<AnimationController['play']>[0], target: HTMLElement) => {
-      const result = await controller.play(name, target, localAbort.signal);
-      results.push(result);
-      return result;
-    };
-
-    const impact = await play('bossReactionImpact', input.boss);
+    const impact = await controller.play('bossReactionImpact', input.boss, localAbort.signal);
+    results.push(impact);
     const impactStatus = outcomeToStatus(impact.outcome);
     if (impactStatus === 'aborted') {
       return { status: hardTimedOut ? 'timeout' : 'aborted', animationResults: results, elapsedMs: now() - startedAt };
     }
 
-    const advance = await play('bossReactionAdvance', input.boss);
-    const advanceStatus = outcomeToStatus(advance.outcome);
-    if (advanceStatus === 'aborted') {
+    const [advance, hit] = await Promise.all([
+      controller.play('bossReactionAdvance', input.tula, localAbort.signal),
+      controller.play('bossHit', input.boss, localAbort.signal),
+    ]);
+    results.push(advance, hit);
+    const attackStatus = firstBlockingStatus([advance, hit]);
+    if (attackStatus === 'aborted') {
       return { status: hardTimedOut ? 'timeout' : 'aborted', animationResults: results, elapsedMs: now() - startedAt };
     }
 
-    // WebKit can discard a finished WAAPI transform once the Animation object becomes collectable.
-    // Persist the cinematic center pose as inline transform for the dialogue hold, then animate back.
-    input.boss.style.transform = `translate3d(${dx.toFixed(2)}px,0,0) scale(${scale.toFixed(3)})`;
-    input.boss.style.filter = 'brightness(1.08)';
+    // Keep Tula in the attack position during the dialogue; WebKit can otherwise drop
+    // the completed WAAPI transform before the 2.5 s reaction hold is finished.
+    input.tula.style.transform = `translate3d(${dx.toFixed(2)}px,0,0) scale(${scale.toFixed(3)})`;
+    input.tula.style.filter = 'brightness(1.08) drop-shadow(0 9px 12px rgba(0,16,29,.45))';
 
     input.dialogue.hidden = false;
     input.dialogue.setAttribute('data-visible', 'true');
-    const dialogueIn = await play('bossReactionDialogueIn', input.dialogue);
+    const dialogueIn = await controller.play('bossReactionDialogueIn', input.dialogue, localAbort.signal);
+    results.push(dialogueIn);
     if (outcomeToStatus(dialogueIn.outcome) === 'aborted') {
       return { status: hardTimedOut ? 'timeout' : 'aborted', animationResults: results, elapsedMs: now() - startedAt };
     }
@@ -206,23 +215,43 @@ export async function playBossWordReaction(
       return { status: hardTimedOut ? 'timeout' : 'aborted', animationResults: results, elapsedMs: now() - startedAt };
     }
 
-    await play('bossReactionDialogueOut', input.dialogue);
+    const dialogueOut = await controller.play('bossReactionDialogueOut', input.dialogue, localAbort.signal);
+    results.push(dialogueOut);
     input.dialogue.hidden = true;
     input.dialogue.removeAttribute('data-visible');
 
-    const exit = await play(input.defeated ? 'bossReactionDefeat' : 'bossReactionReturn', input.boss);
-    const exitStatus = outcomeToStatus(exit.outcome);
-    if (exitStatus === 'timeout') {
-      return { status: 'timeout', animationResults: results, elapsedMs: now() - startedAt };
-    }
-    if (exitStatus === 'aborted') {
-      return { status: hardTimedOut ? 'timeout' : 'aborted', animationResults: results, elapsedMs: now() - startedAt };
-    }
-    if (exitStatus === 'fallback' || advanceStatus === 'fallback' || impactStatus === 'fallback') {
-      return { status: 'fallback', animationResults: results, elapsedMs: now() - startedAt };
+    if (input.defeated) {
+      const [returnTula, defeatBoss] = await Promise.all([
+        controller.play('bossReactionReturn', input.tula, localAbort.signal),
+        controller.play('bossReactionDefeat', input.boss, localAbort.signal),
+      ]);
+      results.push(returnTula, defeatBoss);
+      const exitStatus = firstBlockingStatus([returnTula, defeatBoss]);
+      if (exitStatus === 'timeout') {
+        return { status: 'timeout', animationResults: results, elapsedMs: now() - startedAt };
+      }
+      if (exitStatus === 'aborted') {
+        return { status: hardTimedOut ? 'timeout' : 'aborted', animationResults: results, elapsedMs: now() - startedAt };
+      }
+      if (exitStatus === 'fallback' || attackStatus === 'fallback' || impactStatus === 'fallback') {
+        return { status: 'fallback', animationResults: results, elapsedMs: now() - startedAt };
+      }
+    } else {
+      const returnTula = await controller.play('bossReactionReturn', input.tula, localAbort.signal);
+      results.push(returnTula);
+      const exitStatus = outcomeToStatus(returnTula.outcome);
+      if (exitStatus === 'timeout') {
+        return { status: 'timeout', animationResults: results, elapsedMs: now() - startedAt };
+      }
+      if (exitStatus === 'aborted') {
+        return { status: hardTimedOut ? 'timeout' : 'aborted', animationResults: results, elapsedMs: now() - startedAt };
+      }
+      if (exitStatus === 'fallback' || attackStatus === 'fallback' || impactStatus === 'fallback') {
+        return { status: 'fallback', animationResults: results, elapsedMs: now() - startedAt };
+      }
+      await delay(40, localAbort.signal);
     }
 
-    if (!input.defeated) await delay(40, localAbort.signal);
     return {
       status: holdResult === 'skipped' ? 'skipped' : 'finished',
       animationResults: results,

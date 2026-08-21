@@ -1,6 +1,6 @@
 import { AnimationController } from './animationController';
 import { playBossWordReaction, type BossReactionSequenceResult } from './bossReactionSequence';
-import { BossReactionSelector } from '../data/bossReactions';
+import { BossReactionSelector, TulaReactionSelector } from '../data/bossReactions';
 
 const BOSS_FILES = [
   'level-01-pirat-kai.png',
@@ -96,34 +96,78 @@ function syncBossImages(baseUrl: string): void {
   });
 }
 
-function ensureDialogue(arena: HTMLElement): HTMLElement {
-  let dialogue = arena.querySelector<HTMLElement>('.lb-boss-reaction-dialogue');
-  if (dialogue) return dialogue;
-
-  dialogue = document.createElement('div');
-  dialogue.className = 'lb-boss-reaction-dialogue';
-  dialogue.hidden = true;
-  dialogue.tabIndex = 0;
-  dialogue.setAttribute('role', 'status');
-  dialogue.setAttribute('aria-live', 'polite');
+function buildSpeechBubble(className: string): HTMLElement {
+  const bubble = document.createElement('div');
+  bubble.className = `lb-reaction-bubble ${className}`;
 
   const name = document.createElement('small');
   name.className = 'lb-boss-reaction-name';
   const quote = document.createElement('strong');
   quote.className = 'lb-boss-reaction-quote';
+  bubble.append(name, quote);
+  return bubble;
+}
+
+function ensureDuoDialogue(arena: HTMLElement): HTMLElement {
+  let dialogue = arena.querySelector<HTMLElement>('.lb-duo-reaction');
+  if (dialogue) return dialogue;
+
+  dialogue = document.createElement('div');
+  dialogue.className = 'lb-duo-reaction';
+  dialogue.hidden = true;
+  dialogue.tabIndex = 0;
+  dialogue.setAttribute('role', 'status');
+  dialogue.setAttribute('aria-live', 'polite');
+  dialogue.setAttribute('aria-label', 'Tula und der Pirat reagieren auf das gelöste Wort');
+
+  dialogue.append(
+    buildSpeechBubble('lb-tula-reaction-dialogue'),
+    buildSpeechBubble('lb-boss-reaction-dialogue'),
+  );
+
   const hint = document.createElement('span');
   hint.className = 'lb-boss-reaction-skip';
   hint.textContent = 'Tippen zum Überspringen';
-  dialogue.append(name, quote, hint);
+  dialogue.append(hint);
   arena.append(dialogue);
   return dialogue;
 }
 
-function setDialogue(dialogue: HTMLElement, bossName: string, text: string, enabled: boolean): void {
-  const name = dialogue.querySelector<HTMLElement>('.lb-boss-reaction-name');
-  const quote = dialogue.querySelector<HTMLElement>('.lb-boss-reaction-quote');
-  if (name) name.textContent = bossName.toLocaleUpperCase('de-DE');
-  if (quote) quote.textContent = enabled ? `„${text}“` : 'Starker Treffer!';
+function setSpeechBubble(
+  bubble: Element | null,
+  speakerName: string,
+  text: string,
+  enabled: boolean,
+  fallback: string,
+): void {
+  if (!(bubble instanceof HTMLElement)) return;
+  const name = bubble.querySelector<HTMLElement>('.lb-boss-reaction-name');
+  const quote = bubble.querySelector<HTMLElement>('.lb-boss-reaction-quote');
+  if (name) name.textContent = speakerName.toLocaleUpperCase('de-DE');
+  if (quote) quote.textContent = enabled ? `„${text}“` : fallback;
+}
+
+function setDuoDialogue(
+  dialogue: HTMLElement,
+  bossName: string,
+  bossText: string,
+  tulaText: string,
+  enabled: boolean,
+): void {
+  setSpeechBubble(
+    dialogue.querySelector('.lb-tula-reaction-dialogue'),
+    'Tula',
+    tulaText,
+    enabled,
+    'Super gemacht!',
+  );
+  setSpeechBubble(
+    dialogue.querySelector('.lb-boss-reaction-dialogue'),
+    bossName,
+    bossText,
+    enabled,
+    'Autsch – guter Treffer!',
+  );
 }
 
 function createImpactParticles(arena: HTMLElement, boss: HTMLElement): void {
@@ -181,7 +225,8 @@ function lockReactionInputs(locked: boolean): void {
 
 export function installBossReactionRuntime(options: BossReactionBrowserOptions): void {
   const baseUrl = normalizeBase(options.baseUrl);
-  const selector = new BossReactionSelector();
+  const bossSelector = new BossReactionSelector();
+  const tulaSelector = new TulaReactionSelector();
   const controller = new AnimationController();
   let observer: MutationObserver | undefined;
   let reactionRunning = false;
@@ -205,15 +250,23 @@ export function installBossReactionRuntime(options: BossReactionBrowserOptions):
     reactionRunning = true;
     const arena = document.getElementById('arena');
     const boss = document.getElementById('bossArt');
-    if (!(arena instanceof HTMLElement) || !(boss instanceof HTMLElement)) {
+    const tula = document.querySelector('.arena .tula');
+    if (!(arena instanceof HTMLElement) || !(boss instanceof HTMLElement) || !(tula instanceof HTMLElement)) {
       reactionRunning = false;
       return { status: 'fallback', animationResults: [], elapsedMs: 0 };
     }
 
     syncBossImages(baseUrl);
-    const dialogue = ensureDialogue(arena);
-    const reaction = selector.select(request.bossIndex, request.defeated ? 'defeated' : 'normal');
-    setDialogue(dialogue, request.bossName, reaction.text, options.dialogueEnabled);
+    const dialogue = ensureDuoDialogue(arena);
+    const bossReaction = bossSelector.select(request.bossIndex, request.defeated ? 'defeated' : 'normal');
+    const tulaReaction = tulaSelector.select();
+    setDuoDialogue(
+      dialogue,
+      request.bossName,
+      bossReaction.text,
+      tulaReaction,
+      options.dialogueEnabled,
+    );
     arena.dataset.reactionActive = 'true';
     lockReactionInputs(true);
     createImpactParticles(arena, boss);
@@ -221,6 +274,7 @@ export function installBossReactionRuntime(options: BossReactionBrowserOptions):
     try {
       return await playBossWordReaction({
         boss,
+        tula,
         arena,
         dialogue,
         defeated: request.defeated,
