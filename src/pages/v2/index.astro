@@ -68,7 +68,7 @@ import '../../styles/tokens.css';
         }
 
         html = html
-          .replace('<head>', `<head><base href="${base}"><link rel="stylesheet" href="${base}v2.css?v=v2-arena-momentum">`)
+          .replace('<head>', `<head><base href="${base}"><link rel="stylesheet" href="${base}v2.css?v=v2-arena-momentum"><link rel="stylesheet" href="${base}arena-momentum.css?v=v2-arena-momentum">`)
           .replaceAll(oldAbsoluteBossPath, firstBoss)
           .replaceAll('boss-sprite-dropbox-v2.webp', firstBoss)
           .replaceAll('boss-sprite-dropbox.webp', firstBoss)
