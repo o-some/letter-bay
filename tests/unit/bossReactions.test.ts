@@ -3,6 +3,8 @@ import {
   BossReactionSelector,
   DEFEATED_BOSS_REACTIONS,
   NORMAL_BOSS_REACTIONS,
+  TULA_REACTIONS,
+  TulaReactionSelector,
 } from '../../src/data/bossReactions';
 
 describe('boss reaction dialogue selector', () => {
@@ -32,5 +34,15 @@ describe('boss reaction dialogue selector', () => {
     const defeated = selector.select(2, 'defeated');
     expect(normal.kind).toBe('normal');
     expect(defeated.kind).toBe('defeated');
+  });
+
+  it('gives Tula a separate rotating encouragement pool', () => {
+    expect(TULA_REACTIONS.length).toBeGreaterThanOrEqual(12);
+    const selector = new TulaReactionSelector({ random: () => 0 });
+    const first = selector.select();
+    const second = selector.select();
+    expect(TULA_REACTIONS).toContain(first);
+    expect(TULA_REACTIONS).toContain(second);
+    expect(second).not.toBe(first);
   });
 });
