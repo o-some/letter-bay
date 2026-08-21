@@ -111,10 +111,6 @@ export function momentumDeltaForMistake(
   };
 }
 
-function byId<T extends { id: string }>(items: readonly T[], id: string): T {
-  return items.find((item) => item.id === id) ?? items[0];
-}
-
 function createElement<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   className: string,
