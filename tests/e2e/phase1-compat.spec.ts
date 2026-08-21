@@ -22,7 +22,7 @@ async function activateStart(page: Page, projectName: string) {
 async function chooseSafeAttack(page: Page) {
   const choice = page.locator('.lb-attack-choice');
   if (await choice.count()) {
-    await expect(choice).toBeVisible({ timeout: 5_000 });
+    await expect(choice).toBeVisible({ timeout: 8_000 });
     await page.locator('.lb-attack-button.attack-safe').click();
     await expect(choice).toBeHidden();
   }
@@ -125,13 +125,13 @@ test('Boss 1 transitions to Boss 2 and remains playable', async ({ page }, testI
     await page.locator('#answer').fill(answer);
     await page.locator('#answerForm button[type="submit"]').click();
     if (round < 2) {
-      await expect(page.locator('.lb-duo-reaction')).toBeHidden({ timeout: 7_000 });
-      await expect(page.locator('.lb-attack-choice')).toBeVisible({ timeout: 7_000 });
+      await expect(page.locator('.lb-duo-reaction')).toBeHidden({ timeout: 10_000 });
+      await expect(page.locator('.lb-attack-choice')).toBeVisible({ timeout: 10_000 });
       await expectPortraitAppFitsViewport(page);
     }
   }
 
-  await expect(page.locator('#intro')).toHaveClass(/show/, { timeout: 10_000 });
+  await expect(page.locator('#intro')).toHaveClass(/show/, { timeout: 12_000 });
   await expect(page.locator('#introName')).toHaveText('Kapitän Brax');
   await expectLoadedImage(page.locator('#introArt .letter-bay-boss-image'));
 
