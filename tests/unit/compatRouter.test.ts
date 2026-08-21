@@ -27,4 +27,10 @@ describe('Letter Bay compatibility router', () => {
     expect(resolveEngineTarget('?engine=v2', '/letter-bay/')).toBe('/letter-bay/v2/');
     expect(resolveV2CompatibilityTarget('/letter-bay/')).toBe('/letter-bay/legacy/index.html?engine=v2-compat');
   });
+
+  it('forwards V2 gameplay query parameters but never contaminates the legacy fallback', () => {
+    expect(resolveEngineTarget('?arenaMomentum=0', '/letter-bay/')).toBe('/letter-bay/v2/?arenaMomentum=0');
+    expect(resolveEngineTarget('?engine=v2&arenaMomentum=0', '/letter-bay/')).toBe('/letter-bay/v2/?arenaMomentum=0');
+    expect(resolveEngineTarget('?engine=legacy&arenaMomentum=0', '/letter-bay/')).toBe('/letter-bay/legacy/index.html?engine=legacy');
+  });
 });
