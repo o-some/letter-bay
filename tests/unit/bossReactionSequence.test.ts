@@ -52,12 +52,13 @@ function fakeElement(options: FakeElementOptions = {}): HTMLElement {
   } as unknown as HTMLElement;
 }
 
-describe('cinematic boss reaction sequence', () => {
-  it('finishes, holds dialogue and returns a surviving boss safely', async () => {
+describe('cinematic solved-word reaction sequence', () => {
+  it('moves Tula forward, hits the boss, holds dialogue and returns Tula safely', async () => {
     const controller = new AnimationController({ prefersReducedMotion: () => false });
     const hold = vi.fn().mockResolvedValue('finished' as const);
     const result = await playBossWordReaction({
       boss: fakeElement({ left: 270, width: 90 }),
+      tula: fakeElement({ left: 12, width: 92 }),
       arena: fakeElement({ left: 0, width: 390, height: 120 }),
       dialogue: fakeElement(),
       defeated: false,
@@ -72,15 +73,17 @@ describe('cinematic boss reaction sequence', () => {
     expect(result.animationResults.map((entry) => entry.name)).toEqual([
       'bossReactionImpact',
       'bossReactionAdvance',
+      'bossHit',
       'bossReactionDialogueIn',
       'bossReactionDialogueOut',
       'bossReactionReturn',
     ]);
   });
 
-  it('uses the defeat exit instead of returning to combat position', async () => {
+  it('returns Tula while the defeated boss uses the defeat exit', async () => {
     const result = await playBossWordReaction({
       boss: fakeElement({ left: 270, width: 90 }),
+      tula: fakeElement({ left: 12, width: 92 }),
       arena: fakeElement({ left: 0, width: 390, height: 120 }),
       dialogue: fakeElement(),
       defeated: true,
@@ -89,7 +92,9 @@ describe('cinematic boss reaction sequence', () => {
       prefersReducedMotion: () => false,
     });
 
-    expect(result.animationResults.at(-1)?.name).toBe('bossReactionDefeat');
+    const names = result.animationResults.map((entry) => entry.name);
+    expect(names).toContain('bossReactionReturn');
+    expect(names.at(-1)).toBe('bossReactionDefeat');
   });
 
   it('falls through safely when a controlled animation times out', async () => {
@@ -103,6 +108,7 @@ describe('cinematic boss reaction sequence', () => {
     });
     const result = await playBossWordReaction({
       boss: fakeElement({ hanging: true }),
+      tula: fakeElement(),
       arena: fakeElement({ width: 390, height: 120 }),
       dialogue: fakeElement(),
       defeated: false,
@@ -116,6 +122,7 @@ describe('cinematic boss reaction sequence', () => {
     abort.abort();
     const result = await playBossWordReaction({
       boss: fakeElement(),
+      tula: fakeElement(),
       arena: fakeElement({ width: 390 }),
       dialogue: fakeElement(),
       defeated: false,
@@ -124,9 +131,9 @@ describe('cinematic boss reaction sequence', () => {
     expect(result.status).toBe('aborted');
   });
 
-  it('reduces boss scale for reduced motion and narrow phones', () => {
-    expect(bossReactionVisualScale(393, true)).toBe(1.04);
-    expect(bossReactionVisualScale(375, false)).toBeLessThanOrEqual(1.12);
-    expect(bossReactionVisualScale(1440, false)).toBeGreaterThan(1.14);
+  it('reduces Tula attack scale for reduced motion and narrow phones', () => {
+    expect(bossReactionVisualScale(393, true)).toBe(1.025);
+    expect(bossReactionVisualScale(375, false)).toBeLessThanOrEqual(1.10);
+    expect(bossReactionVisualScale(1440, false)).toBeGreaterThan(1.10);
   });
 });
