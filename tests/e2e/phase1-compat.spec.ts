@@ -19,6 +19,15 @@ async function activateStart(page: Page, projectName: string) {
   await expect(page.locator('#intro')).not.toHaveClass(/show/);
 }
 
+async function chooseSafeAttack(page: Page) {
+  const choice = page.locator('.lb-attack-choice');
+  if (await choice.count()) {
+    await expect(choice).toBeVisible({ timeout: 5_000 });
+    await page.locator('.lb-attack-button.attack-safe').click();
+    await expect(choice).toBeHidden();
+  }
+}
+
 async function expectLoadedImage(locator: Locator) {
   await expect(locator).toHaveCount(1);
   await expect.poll(
@@ -93,6 +102,7 @@ test('V2 entry preserves legacy gameplay parity while adding the V2 shell', asyn
 test('portrait mobile battle fits one app viewport without vertical scrolling', async ({ page }, testInfo) => {
   await page.goto('/letter-bay/');
   await activateStart(page, testInfo.project.name);
+  await expect(page.locator('.lb-attack-choice')).toBeVisible();
   await expect(page.locator('#keyboard .key')).toHaveCount(29);
   await expect(page.locator('.route')).toBeVisible();
   await expectPortraitAppFitsViewport(page);
@@ -105,6 +115,7 @@ test('Boss 1 transitions to Boss 2 and remains playable', async ({ page }, testI
   await expectPortraitAppFitsViewport(page);
 
   for (let round = 0; round < 3; round += 1) {
+    await chooseSafeAttack(page);
     await page.locator('#hint').click();
     await expect(page.locator('#msg')).toContainText('Hinweis:');
     const message = (await page.locator('#msg').textContent()) ?? '';
@@ -113,15 +124,19 @@ test('Boss 1 transitions to Boss 2 and remains playable', async ({ page }, testI
     if (!answer) throw new Error(`Unknown clue: ${clue}`);
     await page.locator('#answer').fill(answer);
     await page.locator('#answerForm button[type="submit"]').click();
-    if (round < 2) await expect(page.locator('#answer')).toBeEnabled({ timeout: 6_000 });
-    if (round < 2) await expectPortraitAppFitsViewport(page);
+    if (round < 2) {
+      await expect(page.locator('.lb-duo-reaction')).toBeHidden({ timeout: 7_000 });
+      await expect(page.locator('.lb-attack-choice')).toBeVisible({ timeout: 7_000 });
+      await expectPortraitAppFitsViewport(page);
+    }
   }
 
-  await expect(page.locator('#intro')).toHaveClass(/show/, { timeout: 9_000 });
+  await expect(page.locator('#intro')).toHaveClass(/show/, { timeout: 10_000 });
   await expect(page.locator('#introName')).toHaveText('Kapitän Brax');
   await expectLoadedImage(page.locator('#introArt .letter-bay-boss-image'));
 
   await activateStart(page, testInfo.project.name);
+  await expect(page.locator('.lb-attack-choice')).toBeVisible();
   await expect(page.locator('#bossLevel')).toContainText('LEVEL 2');
   await expect(page.locator('#keyboard .key')).toHaveCount(29);
   await expectLoadedImage(page.locator('#bossArt .letter-bay-boss-image'));
