@@ -2,6 +2,19 @@ import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
+const bossFiles = [
+  'level-01-pirat-kai.png',
+  'level-02-kapitaen-brax.png',
+  'level-03-blackfinn.png',
+  'level-04-alt-kapitaen-roderick.png',
+  'level-05-piratenbaron-vargas.png',
+  'level-06-kapitaen-ironhook.png',
+  'level-07-admiral-thorne.png',
+  'level-08-kartenmeister-corvin.png',
+  'level-09-schattenfuerst-azrak.png',
+  'level-10-piratenkoenig-varkos.png',
+] as const;
+
 function legacyClueMap(): Map<string, string> {
   const html = readFileSync('public/legacy/source.html', 'utf8');
   const match = html.match(/,W=(\[\[.*\]\]);const \$=s=>/s);
@@ -21,10 +34,21 @@ async function activateStart(page: Page, projectName: string) {
 
 async function expectLoadedImage(locator: Locator) {
   await expect(locator).toHaveCount(1);
+  await expect(locator).toBeVisible();
   await expect.poll(
-    () => locator.evaluate((image) =>
-      image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
-    ),
+    () => locator.evaluate((image) => {
+      if (!(image instanceof HTMLImageElement)) return false;
+      const rect = image.getBoundingClientRect();
+      const style = getComputedStyle(image);
+      return image.complete
+        && image.naturalWidth > 0
+        && image.naturalHeight > 0
+        && rect.width > 4
+        && rect.height > 4
+        && style.display !== 'none'
+        && style.visibility !== 'hidden'
+        && Number(style.opacity || '1') > .2;
+    }),
     { timeout: 10_000, intervals: [100, 250, 500] },
   ).toBe(true);
 }
@@ -98,6 +122,35 @@ test('portrait mobile battle fits one app viewport without vertical scrolling', 
   await expectPortraitAppFitsViewport(page);
 });
 
+test('whole-word input keeps an iOS-safe font size so focus does not auto-zoom', async ({ page }, testInfo) => {
+  test.skip(!testInfo.project.name.startsWith('webkit'), 'iOS focus zoom guard is validated in WebKit mobile projects.');
+  await page.goto('/letter-bay/');
+  await activateStart(page, testInfo.project.name);
+  const input = page.locator('#answer');
+  await input.focus();
+  const fontSize = await input.evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize));
+  expect(fontSize).toBeGreaterThanOrEqual(16);
+});
+
+test('all ten standalone boss PNGs can be synchronized into the arena', async ({ page }, testInfo) => {
+  await page.goto('/letter-bay/?engine=v2');
+  await activateStart(page, testInfo.project.name);
+
+  for (let index = 0; index < bossFiles.length; index += 1) {
+    await page.evaluate((bossIndex) => {
+      const runtime = window as Window & {
+        __lbSetBossImage?: (element: Element | null, index: number) => void;
+      };
+      runtime.__lbSetBossImage?.(document.getElementById('bossArt'), bossIndex);
+    }, index);
+
+    const image = page.locator('#bossArt .letter-bay-boss-image');
+    await expect(image).toHaveAttribute('data-boss-index', String(index + 1));
+    await expect(image).toHaveAttribute('src', new RegExp(`${bossFiles[index].replace('.', '\\.')}$`));
+    await expectLoadedImage(image);
+  }
+});
+
 test('Boss 1 transitions to Boss 2 and remains playable', async ({ page }, testInfo) => {
   const clues = legacyClueMap();
   await page.goto('/letter-bay/');
@@ -119,12 +172,17 @@ test('Boss 1 transitions to Boss 2 and remains playable', async ({ page }, testI
 
   await expect(page.locator('#intro')).toHaveClass(/show/, { timeout: 9_000 });
   await expect(page.locator('#introName')).toHaveText('Kapitän Brax');
-  await expectLoadedImage(page.locator('#introArt .letter-bay-boss-image'));
+  const introBoss = page.locator('#introArt .letter-bay-boss-image');
+  await expect(introBoss).toHaveAttribute('src', /level-02-kapitaen-brax\.png$/);
+  await expectLoadedImage(introBoss);
 
   await activateStart(page, testInfo.project.name);
   await expect(page.locator('#bossLevel')).toContainText('LEVEL 2');
   await expect(page.locator('#keyboard .key')).toHaveCount(29);
-  await expectLoadedImage(page.locator('#bossArt .letter-bay-boss-image'));
+  const arenaBoss = page.locator('#bossArt .letter-bay-boss-image');
+  await expect(arenaBoss).toHaveAttribute('data-boss-index', '2');
+  await expect(arenaBoss).toHaveAttribute('src', /level-02-kapitaen-brax\.png$/);
+  await expectLoadedImage(arenaBoss);
   await expectPortraitAppFitsViewport(page);
 
   const scrollState = await page.evaluate(() => ({
