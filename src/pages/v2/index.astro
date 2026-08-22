@@ -60,7 +60,7 @@ import '../../styles/tokens.css';
 
         html = html
           .replace(legacySpriteFunction, syncedSpriteFunction)
-          .replace('<head>', `<head><base href="${base}"><link rel="stylesheet" href="${base}v2.css?v=v2-boss-reaction"><link rel="stylesheet" href="${base}arena-layout-fix.css?v=arena-layout-fix">`)
+          .replace('<head>', `<head><base href="${base}"><link rel="stylesheet" href="${base}v2.css?v=v2-boss-reaction"><link rel="stylesheet" href="${base}arena-layout-fix.css?v=arena-layout-fix"><link rel="stylesheet" href="${base}mobile-input-fix.css?v=ios-input-zoom-fix">`)
           .replaceAll(oldAbsoluteBossPath, firstBoss)
           .replaceAll('boss-sprite-dropbox-v2.webp', firstBoss)
           .replaceAll('boss-sprite-dropbox.webp', firstBoss)
