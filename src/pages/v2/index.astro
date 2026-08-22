@@ -35,6 +35,8 @@ import '../../styles/tokens.css';
       const firstBoss = `${base}assets/bosses/level-01-pirat-kai.png?v=v2-boss-reaction`;
       const legacySourceUrl = `${base}legacy/source.html?v=v2-boss-reaction`;
       const oldAbsoluteBossPath = '/tulasisland/' + 'letter-bay/bosses/level-01-pirat-kai.webp';
+      const legacySpriteFunction = `function sprite(el,i){el.style.setProperty('--bx',(i%5)*25+'%');el.style.setProperty('--by',i<5?'0%':'100%');if(i===0)el.style.backgroundImage="url('${oldAbsoluteBossPath}'),url('boss-sprite-dropbox-v2.webp')";else el.style.backgroundImage="url('boss-sprite-dropbox-v2.webp')"}`;
+      const syncedSpriteFunction = `function sprite(el,i){if(window.__lbSetBossImage){window.__lbSetBossImage(el,i);return}el.style.setProperty('--bx',(i%5)*25+'%');el.style.setProperty('--by',i<5?'0%':'100%');if(i===0)el.style.backgroundImage="url('${oldAbsoluteBossPath}'),url('boss-sprite-dropbox-v2.webp')";else el.style.backgroundImage="url('boss-sprite-dropbox-v2.webp')"}`;
       const reactionTail = "if(bhp<=0){shells+=12;hud();advanceTimer=setTimeout(bossDown,950)}else{advanceTimer=setTimeout(()=>nextWord(true),950)}}";
       const patchedReactionTail = "if(bhp<=0){shells+=12;hud();if(window.__lbBossReaction){window.__lbBossReaction({defeated:true,bossIndex:boss,bossName:B[boss][0]}).then(()=>bossDown(),()=>bossDown())}else{advanceTimer=setTimeout(bossDown,950)}}else{if(window.__lbBossReaction){window.__lbBossReaction({defeated:false,bossIndex:boss,bossName:B[boss][0]}).then(()=>nextWord(true),()=>nextWord(true))}else{advanceTimer=setTimeout(()=>nextWord(true),950)}}}";
       const legacyStartListener = "$('#start').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();$('#intro').classList.remove('show');nextWord(false)});";
@@ -46,6 +48,9 @@ import '../../styles/tokens.css';
           return response.text();
         });
 
+        if (!html.includes(legacySpriteFunction)) {
+          throw new Error('Letter Bay V2 boss sprite patch target was not found');
+        }
         if (!html.includes(reactionTail)) {
           throw new Error('Letter Bay V2 reaction patch target was not found');
         }
@@ -54,7 +59,8 @@ import '../../styles/tokens.css';
         }
 
         html = html
-          .replace('<head>', `<head><base href="${base}"><link rel="stylesheet" href="${base}v2.css?v=v2-boss-reaction"><link rel="stylesheet" href="${base}arena-layout-fix.css?v=arena-layout-fix">`)
+          .replace(legacySpriteFunction, syncedSpriteFunction)
+          .replace('<head>', `<head><base href="${base}"><link rel="stylesheet" href="${base}v2.css?v=v2-boss-reaction"><link rel="stylesheet" href="${base}arena-layout-fix.css?v=arena-layout-fix"><link rel="stylesheet" href="${base}mobile-input-fix.css?v=ios-input-zoom-fix">`)
           .replaceAll(oldAbsoluteBossPath, firstBoss)
           .replaceAll('boss-sprite-dropbox-v2.webp', firstBoss)
           .replaceAll('boss-sprite-dropbox.webp', firstBoss)

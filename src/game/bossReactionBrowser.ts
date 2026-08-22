@@ -44,6 +44,8 @@ declare global {
   interface Window {
     __lbBossReaction?: (request: BossReactionRequest) => Promise<BossReactionSequenceResult>;
     __lbV2Ready?: () => void;
+    __lbSetBossImage?: (element: Element | null, index: number) => void;
+    __lbSyncBossImages?: (index?: number) => void;
   }
 }
 
@@ -78,17 +80,20 @@ function setBossImage(element: Element | null, index: number, baseUrl: string): 
     element.replaceChildren(image);
   }
   const src = bossUrl(baseUrl, safeIndex);
-  if (image.getAttribute('src') !== src) image.src = src;
-  image.alt = BOSS_NAMES[safeIndex] ?? `Boss ${safeIndex + 1}`;
-  image.dataset.bossIndex = String(safeIndex + 1);
+  image.onload = () => image?.classList.remove('lb-boss-image-fallback');
   image.onerror = () => {
     image?.classList.add('lb-boss-image-fallback');
     if (image) image.alt = `${BOSS_NAMES[safeIndex]} – Grafik konnte nicht geladen werden`;
   };
+  image.alt = BOSS_NAMES[safeIndex] ?? `Boss ${safeIndex + 1}`;
+  image.dataset.bossIndex = String(safeIndex + 1);
+  if (image.getAttribute('src') !== src) image.src = src;
 }
 
-function syncBossImages(baseUrl: string): void {
-  const index = currentBossIndex();
+function syncBossImages(baseUrl: string, forcedIndex?: number): void {
+  const index = forcedIndex === undefined
+    ? currentBossIndex()
+    : Math.max(0, Math.min(BOSS_FILES.length - 1, forcedIndex));
   setBossImage(document.getElementById('bossArt'), index, baseUrl);
   setBossImage(document.getElementById('introArt'), index, baseUrl);
   document.querySelectorAll('#route .boss-card .mini').forEach((element, routeIndex) => {
@@ -231,6 +236,12 @@ export function installBossReactionRuntime(options: BossReactionBrowserOptions):
   let observer: MutationObserver | undefined;
   let reactionRunning = false;
 
+  // The legacy game calls sprite(el, bossIndex) on every HUD/route update.
+  // Expose an explicit image hook so every boss transition can synchronously
+  // select the correct standalone PNG instead of relying on MutationObserver timing.
+  window.__lbSetBossImage = (element, index) => setBossImage(element, index, baseUrl);
+  window.__lbSyncBossImages = (index) => syncBossImages(baseUrl, index);
+
   window.__lbV2Ready = () => {
     syncBossImages(baseUrl);
     observer?.disconnect();
@@ -256,7 +267,7 @@ export function installBossReactionRuntime(options: BossReactionBrowserOptions):
       return { status: 'fallback', animationResults: [], elapsedMs: 0 };
     }
 
-    syncBossImages(baseUrl);
+    syncBossImages(baseUrl, request.bossIndex);
     const dialogue = ensureDuoDialogue(arena);
     const bossReaction = bossSelector.select(request.bossIndex, request.defeated ? 'defeated' : 'normal');
     const tulaReaction = tulaSelector.select();
